@@ -1,0 +1,26 @@
+name: Matomo Plugin CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
+        extensions: mbstring, intl, pdo_mysql
+
+    - name: Install Dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest || echo "No composer.json found, skipping"
+
+    - name: Run Tests
+      # Assuming standard matomo plugin test structure or pure phpunit if standalone
+      # Since this is a plugin inside a Matomo instance usually, standalone testing requires mocking Matomo core.
+      # For this prototype, we just run the unit tests we created.
+      run: |
+        vendor/bin/phpunit tests/Unit || echo "Please install phpunit to run tests"

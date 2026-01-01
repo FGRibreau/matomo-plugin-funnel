@@ -1,0 +1,36 @@
+# phpstan.neon.dist
+
+parameters:
+    level: 5 # Higher levels for stricter checks
+    paths:
+        - API.php
+        - Archiver.php
+        - Controller.php
+        - Funnels.php
+        - Columns/
+        - DAO/
+        - Model/
+        - Reports/
+        - Tasks/
+        - Commands/
+
+    # Autoloading for Piwik/Matomo classes (adjust if needed for your Matomo version or setup)
+    # This part can be tricky without a full Matomo environment.
+    # Usually, Matomo's composer autoload takes care of it.
+    # For local dev, you might need to point to Matomo core's vendor/autoload.php
+
+    bootstrapFiles:
+        - tests/stubs.php # Include our stubs for basic class definitions
+
+    excludePaths:
+        # Exclude generated / vendor files
+        - vendor/*
+        - "**/tests/*" # Exclude test files themselves from static analysis if they contain test-specific mocks
+
+    # Ignoring some specific errors that might come from Matomo's internal APIs 
+    # or older parts of the codebase that we cannot control.
+    ignoreErrors:
+        # Example: Ignore undefined variable if a Matomo API returns mixed types
+        # - '#Call to an undefined method Piwik\Common::getRequestVar().#'
+        # - '#Access to an undefined property Piwik\Plugin\API::$#'
+        # - '#Parameter #1 $idSite of method Piwik\Piwik::checkUserHasAdminAccess() expects int, int|string given.#'
