@@ -1,6 +1,6 @@
 <?php
 
-namespace Piwik\Plugins\Funnels\tests\Integration;
+namespace Piwik\Plugins\FunnelInsights\tests\Integration;
 
 use PHPUnit\Framework\TestCase;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Piwik\Plugins\Funnels\Reports;
+namespace Piwik\Plugins\FunnelInsights\Reports;
 
 use Piwik\Plugin\Report;
 use Piwik\Plugin\ViewDataTable;
@@ -9,7 +9,7 @@ class GetOverview extends Report
 {
     protected function init()
     {
-        $this->category = 'Funnels';
+        $this->categoryId = 'FunnelInsights';
         $this->name = 'Funnels Overview';
         $this->action = 'getOverview';
         $this->order = 1;

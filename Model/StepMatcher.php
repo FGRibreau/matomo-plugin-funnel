@@ -1,6 +1,6 @@
 <?php
 
-namespace Piwik\Plugins\Funnels\Model;
+namespace Piwik\Plugins\FunnelInsights\Model;
 
 class StepMatcher
 {

@@ -1,10 +1,10 @@
 <?php
 
-namespace Piwik\Plugins\Funnels\Columns;
+namespace Piwik\Plugins\FunnelInsights\Columns;
 
 use Piwik\Plugin\Dimension\VisitDimension;
-use Piwik\Plugins\Funnels\DAO\FunnelConfig;
-use Piwik\Plugins\Funnels\Model\StepMatcher;
+use Piwik\Plugins\FunnelInsights\DAO\FunnelConfig;
+use Piwik\Plugins\FunnelInsights\Model\StepMatcher;
 use Piwik\Tracker\Request;
 use Piwik\Tracker\Visitor;
 use Piwik\Tracker\Action;

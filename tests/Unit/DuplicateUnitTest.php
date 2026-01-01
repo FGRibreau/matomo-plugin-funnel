@@ -1,11 +1,11 @@
 <?php
 
-namespace Piwik\Plugins\Funnels\tests\Unit;
+namespace Piwik\Plugins\FunnelInsights\tests\Unit;
 
 require_once __DIR__ . '/../stubs.php';
 
-use Piwik\Plugins\Funnels\API;
-use Piwik\Plugins\Funnels\DAO\FunnelConfig;
+use Piwik\Plugins\FunnelInsights\API;
+use Piwik\Plugins\FunnelInsights\DAO\FunnelConfig;
 use PHPUnit\Framework\TestCase;
 
 class DuplicateUnitTest extends TestCase

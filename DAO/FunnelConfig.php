@@ -1,6 +1,6 @@
 <?php
 
-namespace Piwik\Plugins\Funnels\DAO;
+namespace Piwik\Plugins\FunnelInsights\DAO;
 
 use Piwik\Common;
 use Piwik\Db;

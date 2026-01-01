@@ -1,8 +1,8 @@
 <?php
 
-namespace Piwik\Plugins\Funnels\tests\Integration;
+namespace Piwik\Plugins\FunnelInsights\tests\Integration;
 
-use Piwik\Plugins\Funnels\API;
+use Piwik\Plugins\FunnelInsights\API;
 use Piwik\Tests\Framework\TestCase\IntegrationTestCase;
 
 class DuplicateFunnelTest extends IntegrationTestCase

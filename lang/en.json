@@ -1,5 +1,5 @@
 {
-    "Funnels": {
+    "FunnelInsights": {
         "PluginDescription": "Define, track, and analyze visitor paths (funnels) towards a specific conversion goal or flow.",
         "Funnel": "Funnel",
         "Funnels": "Funnels",

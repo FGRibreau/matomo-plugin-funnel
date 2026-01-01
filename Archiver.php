@@ -1,10 +1,10 @@
 <?php
 
-namespace Piwik\Plugins\Funnels;
+namespace Piwik\Plugins\FunnelInsights;
 
 use Piwik\Plugin\Archiver as AbstractArchiver;
-use Piwik\Plugins\Funnels\DAO\FunnelConfig;
-use Piwik\Plugins\Funnels\Model\StepMatcher;
+use Piwik\Plugins\FunnelInsights\DAO\FunnelConfig;
+use Piwik\Plugins\FunnelInsights\Model\StepMatcher;
 use Piwik\Db;
 use Piwik\Common;
 use Piwik\DataTable;

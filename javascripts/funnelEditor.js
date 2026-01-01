@@ -247,7 +247,7 @@
             fetchSuggestions: function(type) {
                 var self = this;
                 var idSite = (new URLSearchParams(window.location.search)).get('idSite');
-                var url = 'index.php?module=API&method=Funnels.getSuggestedValues&idSite=' + idSite + '&type=' + type + '&format=JSON';
+                var url = 'index.php?module=API&method=FunnelInsights.getSuggestedValues&idSite=' + idSite + '&type=' + type + '&format=JSON';
                 
                 fetch(url)
                 .then(response => response.json())
@@ -270,7 +270,7 @@
                     return;
                 }
 
-                var url = 'index.php?module=API&method=Funnels.validateFunnelSteps&idSite=' + idSite + '&format=JSON';
+                var url = 'index.php?module=API&method=FunnelInsights.validateFunnelSteps&idSite=' + idSite + '&format=JSON';
 
                 var params = new URLSearchParams();
                 params.append('steps', JSON.stringify(this.steps));
