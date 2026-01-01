@@ -5,11 +5,18 @@
         "php": ">=7.2"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.0"
+        "phpunit/phpunit": "^9.0",
+        "phpstan/phpstan": "^1.10"
     },
     "autoload": {
         "psr-4": {
             "Piwik\\Plugins\\Funnels\\": "."
         }
+    },
+    "scripts": {
+        "test": "./scripts/run-unit-tests.sh",
+        "test:unit": "./scripts/run-unit-tests.sh",
+        "test:integration": "./scripts/run-integration-tests.sh",
+        "analyse": "./scripts/run-static-analysis.sh"
     }
 }
