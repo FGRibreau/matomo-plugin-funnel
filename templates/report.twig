@@ -1,0 +1,100 @@
+{% extends 'dashboard.twig' %}
+
+{% block content %}
+<div class="funnels-report">
+    <h2>{{ funnel.name }}</h2>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Main Visualization -->
+            <div class="funnel-chart" id="funnel-chart-{{ funnel.idfunnel }}">
+                 <!-- CSS Based Funnel Visualization -->
+                 {% if reportData|length > 0 %}
+                 <div style="display: flex; flex-direction: column; gap: 10px; max-width: 800px; margin: 20px 0;">
+                    {% set maxEntries = reportData[0].entries %}
+                    {% for row in reportData %}
+                        {% set width = (row.entries / maxEntries * 100) %}
+                        <div style="background: #f0f0f0; padding: 10px; border-radius: 4px; position: relative;">
+                             <div style="display:flex; justify-content: space-between; margin-bottom: 5px;">
+                                 <strong>{{ row.label }}</strong>
+                                 <span>{{ row.entries }} entries</span>
+                             </div>
+                             <!-- Bar container -->
+                             <div style="height: 20px; background: #e0e0e0; width: 100%; border-radius: 2px;">
+                                 <!-- Proceeded Bar -->
+                                 <div style="height: 100%; width: {{ (row.proceeded / row.entries * 100)|round }}%; background: #4caf50; display: inline-block;"></div>
+                                 <!-- Dropoff Bar (Remainder) -->
+                             </div>
+                             <div style="font-size: 0.8em; color: #666; margin-top: 2px;">
+                                 Proceeded: {{ row.proceeded }} | Drop-off: {{ row.exits }}
+                             </div>
+                        </div>
+                        {% if not loop.last %}
+                            <div style="text-align: center; color: #999;">↓</div>
+                        {% endif %}
+                    {% endfor %}
+                 </div>
+                 {% else %}
+                 <div class="alert alert-info">No data available for this period.</div>
+                 {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <h3>Funnel Details</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Step</th>
+                        <th>Entries</th>
+                        <th>Visits</th>
+                        <th>Proceeded</th>
+                        <th>Drop-off</th>
+                        <th>Avg. Time to Next Step</th>
+                        <th>Top Drop-off URLs</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in reportData %}
+                    <tr>
+                        <td>{{ row.label }}</td>
+                        <td>{{ row.entries }}</td>
+                        <td>{{ row.visits }}</td>
+                        <td>{{ row.proceeded }} ({{ (row.entries > 0 ? row.proceeded / row.entries * 100 : 0)|number_format(1) }}%)</td>
+                        <td>{{ row.exits }} ({{ (row.entries > 0 ? row.exits / row.entries * 100 : 0)|number_format(1) }}%)</td>
+                        <td>{{ row.avg_time_on_step|default('-') }}</td>
+                        <td>
+                            {% if row.top_dropoffs is not empty %}
+                                <ul>
+                                {% for url, count in row.top_dropoffs %}
+                                    <li>{{ url }} ({{ count }})</li>
+                                {% endfor %}
+                                </ul>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                             <a href="{{ linkTo({'module': 'CoreHome', 'action': 'index', 'idSite': idSite, 'period': period, 'date': date, 'segment': 'funnel_participated_step==' ~ (loop.index0)}) }}" target="_blank" title="View Visitors at this step">
+                                <span class="icon-user"></span> Log
+                             </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            
+            <p style="margin-top: 20px;">
+                <!-- Link to Visitor Log filtered by Funnel Participation -->
+                <!-- Assuming segment 'funnel_participated' works or we just show all for now -->
+                <a href="{{ linkTo({'module': 'CoreHome', 'action': 'index', 'idSite': idSite, 'period': period, 'date': date, 'segment': 'funnel_participated==1'}) }}" target="_blank" class="btn btn-default">
+                    <span class="icon-user"></span> Show all funnel visits log
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

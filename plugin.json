@@ -1,0 +1,18 @@
+{
+    "name": "Funnels",
+    "description": "Define, track, and analyze visitor paths (funnels) towards a specific conversion goal or flow.",
+    "version": "1.0.0",
+    "require": {
+        "matomo": ">=4.0.0"
+    },
+    "license": "GPL-3.0+",
+    "keywords": ["funnels", "conversion", "analysis"],
+    "authors": [
+        {
+            "name": "François-Guillaume Ribreau",
+            "email": "matomo@fgribreau.com"
+        }
+    ],
+    "homepage": "https://github.com/FGRibreau/matomo-plugin-funnel",
+    "support": "https://github.com/FGRibreau/matomo-plugin-funnel"
+}

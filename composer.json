@@ -1,0 +1,15 @@
+{
+    "name": "matomo-org/plugin-funnels",
+    "description": "Funnels Plugin for Matomo",
+    "require": {
+        "php": ">=7.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Piwik\\Plugins\\Funnels\\": "."
+        }
+    }
+}
