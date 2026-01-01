@@ -1,11 +1,11 @@
 {
     "name": "matomo-org/plugin-funnels",
-    "description": "Funnels Plugin for Matomo",
+    "description": "Funnels Plugin for Matomo 5.x",
     "require": {
-        "php": ">=7.2"
+        "php": ">=7.4"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.0",
+        "phpunit/phpunit": "^9.0 || ^10.0",
         "phpstan/phpstan": "^1.10"
     },
     "autoload": {

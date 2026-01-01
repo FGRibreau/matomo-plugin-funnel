@@ -1,8 +1,8 @@
 # Matomo Funnels Plugin
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![PHP Version](https://img.shields.io/badge/php-%3E%3D7.2-8892BF.svg)](https://php.net/)
-[![Matomo Version](https://img.shields.io/badge/matomo-%3E%3D4.0.0-3152A0.svg)](https://matomo.org/)
+[![PHP Version](https://img.shields.io/badge/php-%3E%3D7.4-8892BF.svg)](https://php.net/)
+[![Matomo Version](https://img.shields.io/badge/matomo-%3E%3D5.0.0-3152A0.svg)](https://matomo.org/)
 
 A powerful analytics plugin for [Matomo](https://matomo.org/) that enables you to define, track, and analyze visitor paths (funnels) towards conversion goals.
 
@@ -56,9 +56,11 @@ Before installing, ensure you have:
 
 | Requirement | Version |
 |-------------|---------|
-| Matomo | 4.0.0 or higher |
-| PHP | 7.2 or higher |
-| MySQL/MariaDB | 5.7+ / 10.2+ |
+| Matomo | 5.0.0 or higher |
+| PHP | 7.4 or higher |
+| MySQL/MariaDB | 5.7+ / 10.3+ |
+
+> **Note:** This version (2.0.0) is specifically designed for Matomo 5.x. For Matomo 4.x support, please use version 1.x of this plugin.
 
 ---
 
@@ -259,12 +261,12 @@ docker-compose logs -f matomo
 
 Open http://localhost:8080 in your browser and complete the Matomo setup wizard.
 
-**Default Docker Configuration:**
+**Default Docker Configuration (Matomo 5.x):**
 
 | Service | Details |
 |---------|---------|
-| Matomo | http://localhost:8080 |
-| MariaDB | Port 3306, User: `matomo`, Password: `matomo` |
+| Matomo | http://localhost:8080 (Matomo 5-fpm-alpine) |
+| MariaDB | Port 3306, User: `matomo`, Password: `matomo` (MariaDB 10.6) |
 | Database | `matomo` |
 
 **Step 5: Activate the plugin**

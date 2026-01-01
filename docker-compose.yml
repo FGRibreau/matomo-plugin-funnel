@@ -1,7 +1,7 @@
 version: '3'
 services:
   db:
-    image: mariadb:10.5
+    image: mariadb:10.6
     command: --max-allowed-packet=64MB
     environment:
       - MYSQL_ROOT_PASSWORD=password
@@ -12,7 +12,7 @@ services:
       - ./docker/matomo-db:/var/lib/mysql
 
   matomo:
-    image: matomo:4.13-fpm-alpine
+    image: matomo:5-fpm-alpine
     links:
       - db
     environment:
