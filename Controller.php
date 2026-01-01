@@ -8,6 +8,17 @@ use Piwik\View;
 
 class Controller extends AbstractController
 {
+    public function index()
+    {
+        Piwik::checkUserHasViewAccess($this->idSite);
+
+        $view = new View('@FunnelInsights/index');
+        $view->funnels = API::getInstance()->getFunnels($this->idSite);
+        $this->setBasicVariablesView($view);
+
+        return $view->render();
+    }
+
     public function manage()
     {
         Piwik::checkUserHasAdminAccess($this->idSite);
