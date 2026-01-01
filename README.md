@@ -275,6 +275,8 @@ docker-compose exec matomo ./console plugin:activate Funnels
 
 ### Running Tests
 
+All test scripts are located in the `scripts/` directory.
+
 **Unit Tests:**
 
 ```bash
@@ -282,14 +284,32 @@ docker-compose exec matomo ./console plugin:activate Funnels
 composer install
 
 # Run unit tests
-./vendor/bin/phpunit tests/Unit
+./scripts/run-unit-tests.sh
+
+# Or using composer
+composer test:unit
 ```
 
 **Integration Tests:**
 
 ```bash
-# Using the provided script (requires Docker)
-./run_integration_tests.sh
+# Requires Docker - starts containers, waits for services, runs tests
+./scripts/run-integration-tests.sh
+
+# Or using composer
+composer test:integration
+
+# To cleanup containers after tests
+CLEANUP_ON_EXIT=true ./scripts/run-integration-tests.sh
+```
+
+**Static Analysis (PHPStan):**
+
+```bash
+./scripts/run-static-analysis.sh
+
+# Or using composer
+composer analyse
 ```
 
 **E2E Tests (Playwright):**
@@ -305,12 +325,6 @@ npx playwright install
 
 # Run tests
 npm test
-```
-
-**Static Analysis:**
-
-```bash
-./vendor/bin/phpstan analyse -c phpstan.neon.dist
 ```
 
 ---
