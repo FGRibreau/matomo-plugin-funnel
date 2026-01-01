@@ -1,6 +1,10 @@
 # Guide Utilisateur du Plugin Matomo Funnels
 
-Ce guide vous aide à comprendre et utiliser le plugin Funnels pour Matomo.
+Ce guide vous aide à comprendre et utiliser le plugin Funnels pour Matomo 5.x.
+
+> **Version 2.0.0** - Compatible avec Matomo 5.0.0 et versions supérieures.
+>
+> **Prérequis:** Matomo 5.0.0+, PHP 7.4+, MySQL 5.7+ / MariaDB 10.3+
 
 ## 1. Vue d'ensemble
 
