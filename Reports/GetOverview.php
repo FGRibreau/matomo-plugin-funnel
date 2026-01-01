@@ -3,7 +3,7 @@
 namespace Piwik\Plugins\Funnels\Reports;
 
 use Piwik\Plugin\Report;
-use Piwik\View;
+use Piwik\Plugin\ViewDataTable;
 
 class GetOverview extends Report
 {
@@ -11,15 +11,14 @@ class GetOverview extends Report
     {
         $this->category = 'Funnels';
         $this->name = 'Funnels Overview';
-        $this->action = 'getOverview'; // Maps to API::getOverview
-        $this->order = 1; // Show first
+        $this->action = 'getOverview';
+        $this->order = 1;
     }
 
-    public function configureView(View $view)
+    public function configureView(ViewDataTable $view)
     {
         $view->config->show_all_views_icons = false;
         $view->config->title = 'Funnels Overview';
         $view->config->show_exclude_low_population = false;
-        // Standard table view is fine for the summary list
     }
 }
