@@ -1,12 +1,12 @@
 <?php
 
-namespace Piwik\Plugins\Funnels\Commands;
+namespace Piwik\Plugins\FunnelInsights\Commands;
 
 use Piwik\Plugin\ConsoleCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Piwik\Plugins\Funnels\API;
+use Piwik\Plugins\FunnelInsights\API;
 use Piwik\Archive\Invalidator;
 use Piwik\Date;
 

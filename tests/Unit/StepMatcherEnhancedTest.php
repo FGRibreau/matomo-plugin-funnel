@@ -1,10 +1,10 @@
 <?php
 
-namespace Piwik\Plugins\Funnels\tests\Unit;
+namespace Piwik\Plugins\FunnelInsights\tests\Unit;
 
 require_once __DIR__ . '/../stubs.php';
 
-use Piwik\Plugins\Funnels\Model\StepMatcher;
+use Piwik\Plugins\FunnelInsights\Model\StepMatcher;
 use PHPUnit\Framework\TestCase;
 
 class StepMatcherEnhancedTest extends TestCase

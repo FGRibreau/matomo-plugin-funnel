@@ -1,6 +1,6 @@
 {
-    "name": "matomo-org/plugin-funnels",
-    "description": "Funnels Plugin for Matomo 5.x",
+    "name": "fgribreau/matomo-plugin-funnelinsights",
+    "description": "FunnelInsights Plugin for Matomo 5.x",
     "require": {
         "php": ">=7.4"
     },
@@ -10,7 +10,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Piwik\\Plugins\\Funnels\\": "."
+            "Piwik\\Plugins\\FunnelInsights\\": "."
         }
     },
     "scripts": {

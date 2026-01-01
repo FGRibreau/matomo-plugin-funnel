@@ -1,6 +1,6 @@
 <?php
 
-namespace Piwik\Plugins\Funnels\tests\Unit;
+namespace Piwik\Plugins\FunnelInsights\tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 
@@ -16,7 +16,7 @@ class PluginVersionTest extends TestCase
 
     public function testPluginVersion()
     {
-        $this->assertEquals('2.0.0', $this->pluginJson['version'], 'Plugin version should be 2.0.0');
+        $this->assertEquals('3.0.0', $this->pluginJson['version'], 'Plugin version should be 3.0.0');
     }
 
     public function testRequiresMatomoVersion5()
@@ -33,7 +33,7 @@ class PluginVersionTest extends TestCase
 
     public function testPluginName()
     {
-        $this->assertEquals('Funnels', $this->pluginJson['name'], 'Plugin name should be Funnels');
+        $this->assertEquals('FunnelInsights', $this->pluginJson['name'], 'Plugin name should be FunnelInsights');
     }
 
     public function testPluginLicense()

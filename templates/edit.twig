@@ -3,7 +3,7 @@
 {% block content %}
     <h2>{{ funnel is defined ? 'Edit' : 'Create' }} Funnel</h2>
     
-    <form action="{{ linkTo({'module': 'Funnels', 'action': 'save'}) }}" method="post" class="form-horizontal">
+    <form action="{{ linkTo({'module': 'FunnelInsights', 'action': 'save'}) }}" method="post" class="form-horizontal">
         <input type="hidden" name="idFunnel" value="{{ funnel.idfunnel|default(0) }}" />
         <input type="hidden" name="token_auth" value="{{ token_auth }}" />
         
@@ -71,7 +71,7 @@
         
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save</button>
-            <a href="{{ linkTo({'module': 'Funnels', 'action': 'manage'}) }}" class="btn btn-link">Cancel</a>
+            <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'manage'}) }}" class="btn btn-link">Cancel</a>
         </div>
     </form>
 {% endblock %}

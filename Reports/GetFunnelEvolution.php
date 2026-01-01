@@ -1,15 +1,14 @@
 <?php
 
-namespace Piwik\Plugins\Funnels\Reports;
+namespace Piwik\Plugins\FunnelInsights\Reports;
 
 use Piwik\Plugin\Report;
-use Piwik\View;
 
 class GetFunnelEvolution extends Report
 {
     protected function init()
     {
-        $this->category = 'Funnels';
+        $this->categoryId = 'FunnelInsights';
         $this->name = 'Funnel Evolution';
         $this->action = 'getFunnelEvolution';
     }

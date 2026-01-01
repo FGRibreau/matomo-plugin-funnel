@@ -1,8 +1,8 @@
 <?php
 
-namespace Piwik\Plugins\Funnels\tests\Unit;
+namespace Piwik\Plugins\FunnelInsights\tests\Unit;
 
-use Piwik\Plugins\Funnels\API;
+use Piwik\Plugins\FunnelInsights\API;
 use PHPUnit\Framework\TestCase;
 
 class ApiTest extends TestCase

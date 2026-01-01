@@ -6,7 +6,7 @@ parameters:
         - API.php
         - Archiver.php
         - Controller.php
-        - Funnels.php
+        - FunnelInsights.php
         - Columns/
         - DAO/
         - Model/

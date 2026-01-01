@@ -1,6 +1,6 @@
 <?php
 
-namespace Piwik\Plugins\Funnels\Tasks;
+namespace Piwik\Plugins\FunnelInsights\Tasks;
 
 use Piwik\Plugin\ScheduledTask;
 

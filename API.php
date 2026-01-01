@@ -1,10 +1,10 @@
 <?php
 
-namespace Piwik\Plugins\Funnels;
+namespace Piwik\Plugins\FunnelInsights;
 
 use Piwik\Piwik;
 use Piwik\Archive;
-use Piwik\Plugins\Funnels\DAO\FunnelConfig;
+use Piwik\Plugins\FunnelInsights\DAO\FunnelConfig;
 
 class API extends \Piwik\Plugin\API
 {
@@ -246,7 +246,7 @@ class API extends \Piwik\Plugin\API
         
         $results = array();
         
-        $matcher = new \Piwik\Plugins\Funnels\Model\StepMatcher();
+        $matcher = new \Piwik\Plugins\FunnelInsights\Model\StepMatcher();
         
         foreach ($steps as $index => $step) {
             $match = $matcher->match($step, $hit);

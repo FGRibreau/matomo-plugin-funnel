@@ -1,12 +1,12 @@
 <?php
 
-namespace Piwik\Plugins\Funnels;
+namespace Piwik\Plugins\FunnelInsights;
 
 use Piwik\Plugin;
 use Piwik\Db;
 use Piwik\Common;
 
-class Funnels extends Plugin
+class FunnelInsights extends Plugin
 {
     /**
      * @see Piwik\Plugin::registerEvents
@@ -21,34 +21,34 @@ class Funnels extends Plugin
             'CustomAlerts.getAlertConditions' => 'getAlertConditions',
         );
     }
-    
+
     public function getAlertMetrics(&$metrics)
     {
         $metrics['funnel_conversion_rate'] = array(
             'name' => 'Funnel Conversion Rate',
-            'category' => 'Funnels',
+            'category' => 'FunnelInsights',
             'type' => 'percent'
         );
         $metrics['funnel_conversions'] = array(
             'name' => 'Funnel Conversions',
-            'category' => 'Funnels',
+            'category' => 'FunnelInsights',
             'type' => 'number'
         );
     }
-    
+
     public function getAlertConditions(&$conditions)
     {
-        $conditions = array(); // Standard Matomo conditions are sufficient for our metrics
+        $conditions = array();
     }
 
     public function getScheduledTasks(&$tasks)
     {
-        $tasks[] = new \Piwik\Plugins\Funnels\Tasks\Cleanup();
+        $tasks[] = new \Piwik\Plugins\FunnelInsights\Tasks\Cleanup();
     }
 
     public function getJavaScriptFiles(&$files)
     {
-        $files[] = 'plugins/Funnels/javascripts/funnelEditor.js';
+        $files[] = 'plugins/FunnelInsights/javascripts/funnelEditor.js';
     }
 
     public function getSegments(&$segments)
@@ -56,14 +56,14 @@ class Funnels extends Plugin
         $segments[] = array(
             'segment' => 'funnel_participated',
             'name' => 'Visit participated in funnel',
-            'category' => 'Funnels',
-            'sqlSegment' => 'funnel_participated', // This requires a column in DB or alias logic
+            'category' => 'FunnelInsights',
+            'sqlSegment' => 'funnel_participated',
             'type' => 'dimension',
         );
         $segments[] = array(
             'segment' => 'funnel_participated_step',
             'name' => 'Visit participated in funnel at step position',
-            'category' => 'Funnels',
+            'category' => 'FunnelInsights',
             'sqlSegment' => 'funnel_participated_step',
             'type' => 'dimension',
         );

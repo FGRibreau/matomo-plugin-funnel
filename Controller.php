@@ -1,6 +1,6 @@
 <?php
 
-namespace Piwik\Plugins\Funnels;
+namespace Piwik\Plugins\FunnelInsights;
 
 use Piwik\Plugin\Controller as AbstractController;
 use Piwik\Piwik;
@@ -12,7 +12,7 @@ class Controller extends AbstractController
     {
         Piwik::checkUserHasAdminAccess($this->idSite);
         
-        $view = new View('@Funnels/manage');
+        $view = new View('@FunnelInsights/manage');
         $view->funnels = API::getInstance()->getFunnels($this->idSite);
         $this->setBasicVariablesView($view);
         
@@ -25,7 +25,7 @@ class Controller extends AbstractController
         
         $idFunnel = \Piwik\Common::getRequestVar('idFunnel', 0, 'int');
         
-        $view = new View('@Funnels/edit');
+        $view = new View('@FunnelInsights/edit');
         if ($idFunnel > 0) {
             $view->funnel = API::getInstance()->getFunnel($this->idSite, $idFunnel);
         }
@@ -62,7 +62,7 @@ class Controller extends AbstractController
             API::getInstance()->createFunnel($this->idSite, $name, $steps, $goalId, $active, $strictMode, $stepTimeLimit);
         }
         
-        $this->redirectToIndex('Funnels', 'manage');
+        $this->redirectToIndex('FunnelInsights', 'manage');
     }
     
     public function duplicate()
@@ -75,7 +75,7 @@ class Controller extends AbstractController
             API::getInstance()->duplicateFunnel($this->idSite, $idFunnel);
         }
         
-        $this->redirectToIndex('Funnels', 'manage');
+        $this->redirectToIndex('FunnelInsights', 'manage');
     }
     
     public function delete()
@@ -88,6 +88,6 @@ class Controller extends AbstractController
             API::getInstance()->deleteFunnel($this->idSite, $idFunnel);
         }
         
-        $this->redirectToIndex('Funnels', 'manage');
+        $this->redirectToIndex('FunnelInsights', 'manage');
     }
 }
