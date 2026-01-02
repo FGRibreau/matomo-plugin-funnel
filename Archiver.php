@@ -164,14 +164,14 @@ class Archiver extends AbstractArchiver
             $dataTable = new DataTable();
             $dataTable->addRowsFromSimpleArray($finalStats);
             
-            $this->getProcessor()->insertBlobRecord('Funnel_' . $funnel['idfunnel'], $dataTable->getSerialized());
+            $this->getProcessor()->insertBlobRecord('FunnelInsights_Funnel_' . $funnel['idfunnel'], $dataTable->getSerialized());
         }
     }
 
     public function aggregateMultipleReports()
     {
          $this->getProcessor()->aggregateDataTableRecords(
-            $namePattern = 'Funnel_*',
+            $namePattern = 'FunnelInsights_Funnel_*',
             $maximumRows = null,
             $recordType = 'blob'
         );
