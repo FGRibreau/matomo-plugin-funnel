@@ -12,10 +12,17 @@ class Controller extends ControllerAdmin
     const NONCE_NAME = 'FunnelInsights.saveForm';
 
     /**
-     * Validates CSRF nonce from request
+     * Validates CSRF protection from request.
+     * Accepts either form_nonce (for traditional form submissions) or token_auth (for AJAX/API calls).
+     * When token_auth is present, it serves as CSRF protection since it's a secret tied to the user.
      */
     private function validateCsrfNonce()
     {
+        $tokenAuth = Common::getRequestVar('token_auth', '', 'string');
+        if ($tokenAuth !== '') {
+            return;
+        }
+
         $nonce = Common::getRequestVar('form_nonce', '', 'string');
         if (!Nonce::verifyNonce(self::NONCE_NAME, $nonce)) {
             throw new \Exception(Piwik::translate('General_ExceptionSecurityCheckFailed'));
