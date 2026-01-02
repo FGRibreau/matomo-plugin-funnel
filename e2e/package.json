@@ -1,14 +1,14 @@
 {
-  "name": "matomo-funnel-e2e",
+  "name": "funnelinsights-e2e-tests",
   "version": "1.0.0",
-  "description": "E2E tests for Matomo Funnels plugin using Playwright",
-  "main": "index.js",
+  "description": "E2E tests for FunnelInsights Matomo plugin",
   "scripts": {
-    "test": "playwright test"
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "@playwright/test": "^1.40.0"
   }

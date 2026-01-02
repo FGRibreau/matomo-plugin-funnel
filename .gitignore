@@ -1,6 +1,7 @@
 # Dependencies
 /vendor/
 /node_modules/
+/e2e/node_modules/
 
 # Composer
 composer.phar

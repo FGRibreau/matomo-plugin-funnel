@@ -1,26 +1,91 @@
-name: Matomo Plugin CI
+name: FunnelInsights CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  test:
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.1'
-        extensions: mbstring, intl, pdo_mysql
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring, intl, pdo_mysql
 
-    - name: Install Dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest || echo "No composer.json found, skipping"
+      - name: Install Dependencies
+        run: composer install --prefer-dist --no-progress
 
-    - name: Run Tests
-      # Assuming standard matomo plugin test structure or pure phpunit if standalone
-      # Since this is a plugin inside a Matomo instance usually, standalone testing requires mocking Matomo core.
-      # For this prototype, we just run the unit tests we created.
-      run: |
-        vendor/bin/phpunit tests/Unit || echo "Please install phpunit to run tests"
+      - name: Run Unit Tests
+        run: vendor/bin/phpunit tests/Unit/PluginVersionTest.php tests/Unit/Vue3CompatibilityTest.php
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install E2E Dependencies
+        working-directory: e2e
+        run: |
+          npm ci || npm install
+          npx playwright install --with-deps chromium
+
+      - name: Start Matomo Stack
+        run: |
+          docker compose -f docker-compose.e2e.yml up -d
+          echo "Waiting for Matomo to be ready..."
+
+      - name: Wait for Matomo and init to complete
+        run: |
+          # Wait for matomo to be healthy
+          timeout 300 bash -c 'until curl -sf http://localhost:8080/index.php; do echo "Waiting for Matomo..."; sleep 10; done'
+          echo "Matomo is responding"
+          # Wait for init container to complete (it activates the plugin)
+          timeout 120 bash -c 'while docker compose -f docker-compose.e2e.yml ps matomo-init | grep -q "running"; do echo "Waiting for init..."; sleep 5; done'
+          echo "Init complete!"
+          # Clear cache after init
+          docker compose -f docker-compose.e2e.yml exec -T matomo rm -rf /var/www/html/tmp/cache/* /var/www/html/tmp/assets/* /var/www/html/tmp/templates_c/* || true
+
+      - name: Run E2E Tests
+        working-directory: e2e
+        env:
+          MATOMO_URL: http://localhost:8080
+          MATOMO_USER: admin
+          MATOMO_PASSWORD: adminpassword123
+          MATOMO_IDSITE: 1
+        run: npm test
+
+      - name: Upload Test Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 7
+
+      - name: Matomo Logs on Failure
+        if: failure()
+        run: |
+          docker compose -f docker-compose.e2e.yml logs matomo
+          docker compose -f docker-compose.e2e.yml logs db
+
+      - name: Stop Matomo Stack
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml down -v
