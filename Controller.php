@@ -2,10 +2,10 @@
 
 namespace Piwik\Plugins\FunnelInsights;
 
-use Piwik\Plugin\Controller as PluginController;
+use Piwik\Plugin\ControllerAdmin;
 use Piwik\Piwik;
 
-class Controller extends PluginController
+class Controller extends ControllerAdmin
 {
     public function index()
     {
