@@ -222,23 +222,42 @@
                         return;
                     }
 
+                    // Get token_auth from the page (Matomo includes it in forms)
+                    var tokenAuth = '';
+                    var tokenInput = document.querySelector('input[name="token_auth"]');
+                    if (tokenInput) {
+                        tokenAuth = tokenInput.value;
+                    }
+
                     var url = 'index.php?module=API&method=FunnelInsights.validateFunnelSteps&idSite=' + idSite + '&format=JSON';
 
                     var params = new URLSearchParams();
                     params.append('steps', JSON.stringify(this.steps));
                     params.append('testUrl', this.testValue);
+                    if (tokenAuth) {
+                        params.append('token_auth', tokenAuth);
+                    }
 
                     fetch(url, {
                         method: 'POST',
-                        body: params
+                        body: params,
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
                     })
                     .then(function(response) { return response.json(); })
                     .then(function(data) {
+                        if (data.result === 'error') {
+                            console.error('Validation error:', data.message);
+                            alert('Validation error: ' + data.message);
+                            return;
+                        }
                         self.validationResults = data;
                     })
                     .catch(function(error) {
                         console.error('Validation failed:', error);
-                        alert('Validation failed. See console.');
+                        alert('Validation failed. Check console for details.');
                     });
                 }
             }
