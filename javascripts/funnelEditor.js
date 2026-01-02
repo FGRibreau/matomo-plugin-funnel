@@ -222,21 +222,11 @@
                         return;
                     }
 
-                    // Get token_auth from the page (Matomo includes it in forms)
-                    var tokenAuth = '';
-                    var tokenInput = document.querySelector('input[name="token_auth"]');
-                    if (tokenInput) {
-                        tokenAuth = tokenInput.value;
-                    }
-
-                    var url = 'index.php?module=API&method=FunnelInsights.validateFunnelSteps&idSite=' + idSite + '&format=JSON';
+                    var url = 'index.php?module=FunnelInsights&action=validateSteps&idSite=' + idSite;
 
                     var params = new URLSearchParams();
                     params.append('steps', JSON.stringify(this.steps));
                     params.append('testUrl', this.testValue);
-                    if (tokenAuth) {
-                        params.append('token_auth', tokenAuth);
-                    }
 
                     fetch(url, {
                         method: 'POST',
