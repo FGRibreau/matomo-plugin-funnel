@@ -2,11 +2,26 @@
 
 namespace Piwik\Plugins\FunnelInsights;
 
+use Piwik\Common;
+use Piwik\Nonce;
 use Piwik\Plugin\ControllerAdmin;
 use Piwik\Piwik;
 
 class Controller extends ControllerAdmin
 {
+    const NONCE_NAME = 'FunnelInsights.saveForm';
+
+    /**
+     * Validates CSRF nonce from request
+     */
+    private function validateCsrfNonce()
+    {
+        $nonce = Common::getRequestVar('form_nonce', '', 'string');
+        if (!Nonce::verifyNonce(self::NONCE_NAME, $nonce)) {
+            throw new \Exception(Piwik::translate('General_ExceptionSecurityCheckFailed'));
+        }
+    }
+
     public function index()
     {
         Piwik::checkUserHasViewAccess($this->idSite);
@@ -20,7 +35,7 @@ class Controller extends ControllerAdmin
     {
         Piwik::checkUserHasViewAccess($this->idSite);
 
-        $idFunnel = \Piwik\Common::getRequestVar('idFunnel', 0, 'int');
+        $idFunnel = Common::getRequestVar('idFunnel', 0, 'int');
 
         if ($idFunnel <= 0) {
             $this->redirectToIndex('FunnelInsights', 'index');
@@ -53,7 +68,7 @@ class Controller extends ControllerAdmin
     {
         Piwik::checkUserHasAdminAccess($this->idSite);
 
-        $idFunnel = \Piwik\Common::getRequestVar('idFunnel', 0, 'int');
+        $idFunnel = Common::getRequestVar('idFunnel', 0, 'int');
 
         $funnel = null;
         if ($idFunnel > 0) {
@@ -65,58 +80,57 @@ class Controller extends ControllerAdmin
         return $this->renderTemplate('@FunnelInsights/edit', [
             'funnel' => $funnel,
             'goals' => $goals,
+            'form_nonce' => Nonce::getNonce(self::NONCE_NAME),
         ]);
     }
-    
+
     public function save()
     {
         Piwik::checkUserHasAdminAccess($this->idSite);
-        $this->checkTokenInUrl();
-        
-        $idFunnel = \Piwik\Common::getRequestVar('idFunnel', 0, 'int');
-        $name = \Piwik\Common::getRequestVar('name', '', 'string');
-        $stepsJson = \Piwik\Common::getRequestVar('steps', '[]', 'string');
-        $active = \Piwik\Common::getRequestVar('active', 0, 'int');
-        $goalId = \Piwik\Common::getRequestVar('goal_id', '', 'string');
-        $strictMode = \Piwik\Common::getRequestVar('strict_mode', 0, 'int');
-        $stepTimeLimit = \Piwik\Common::getRequestVar('step_time_limit', 0, 'int');
-        
+        $this->validateCsrfNonce();
+
+        $idFunnel = Common::getRequestVar('idFunnel', 0, 'int');
+        $name = Common::getRequestVar('name', '', 'string');
+        $stepsJson = Common::getRequestVar('steps', '[]', 'string');
+        $active = Common::getRequestVar('active', 0, 'int');
+        $goalId = Common::getRequestVar('goal_id', '', 'string');
+        $strictMode = Common::getRequestVar('strict_mode', 0, 'int');
+        $stepTimeLimit = Common::getRequestVar('step_time_limit', 0, 'int');
+
         $goalId = ($goalId === '') ? null : (int)$goalId;
-        
+
         $steps = json_decode($stepsJson, true);
-        
+
         if ($idFunnel > 0) {
             API::getInstance()->updateFunnel($idFunnel, $this->idSite, $name, $steps, $goalId, $active, $strictMode, $stepTimeLimit);
         } else {
             API::getInstance()->createFunnel($this->idSite, $name, $steps, $goalId, $active, $strictMode, $stepTimeLimit);
         }
-        
+
         $this->redirectToIndex('FunnelInsights', 'manage');
     }
-    
+
     public function duplicate()
     {
         Piwik::checkUserHasAdminAccess($this->idSite);
-        $this->checkTokenInUrl();
-        
-        $idFunnel = \Piwik\Common::getRequestVar('idFunnel', 0, 'int');
+
+        $idFunnel = Common::getRequestVar('idFunnel', 0, 'int');
         if ($idFunnel > 0) {
             API::getInstance()->duplicateFunnel($this->idSite, $idFunnel);
         }
-        
+
         $this->redirectToIndex('FunnelInsights', 'manage');
     }
-    
+
     public function delete()
     {
         Piwik::checkUserHasAdminAccess($this->idSite);
-        $this->checkTokenInUrl();
-        
-        $idFunnel = \Piwik\Common::getRequestVar('idFunnel', 0, 'int');
+
+        $idFunnel = Common::getRequestVar('idFunnel', 0, 'int');
         if ($idFunnel > 0) {
             API::getInstance()->deleteFunnel($this->idSite, $idFunnel);
         }
-        
+
         $this->redirectToIndex('FunnelInsights', 'manage');
     }
 }

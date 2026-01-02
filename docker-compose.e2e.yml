@@ -1,0 +1,60 @@
+services:
+  db:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: matomo
+      MYSQL_USER: matomo
+      MYSQL_PASSWORD: matomo
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - matomo-db:/var/lib/mysql
+
+  matomo:
+    image: matomo:5
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - MATOMO_DATABASE_HOST=db
+      - MATOMO_DATABASE_USERNAME=matomo
+      - MATOMO_DATABASE_PASSWORD=matomo
+      - MATOMO_DATABASE_DBNAME=matomo
+    ports:
+      - "8080:80"
+    volumes:
+      - matomo-data:/var/www/html
+      # Mount plugin source directly for live development/testing
+      - ./:/var/www/html/plugins/FunnelInsights:ro
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost/index.php"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  # Init container that installs Matomo and the plugin
+  matomo-init:
+    image: matomo:5
+    depends_on:
+      matomo:
+        condition: service_healthy
+    environment:
+      - MATOMO_DATABASE_HOST=db
+      - MATOMO_DATABASE_USERNAME=matomo
+      - MATOMO_DATABASE_PASSWORD=matomo
+      - MATOMO_DATABASE_DBNAME=matomo
+    volumes:
+      - matomo-data:/var/www/html
+      - ./docker/matomo-init.sh:/matomo-init.sh:ro
+      - ./:/plugin-source:ro
+    entrypoint: ["/bin/bash", "/matomo-init.sh"]
+    restart: "no"
+
+volumes:
+  matomo-db:
+  matomo-data:

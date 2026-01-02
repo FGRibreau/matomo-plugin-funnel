@@ -34,12 +34,12 @@ class API extends \Piwik\Plugin\API
         }
         
         $this->dao->update($idFunnel, $name, $steps, $goalId, $active, $strictMode, $stepTimeLimit);
-        
+
         // Invalidate archives so the funnel is re-processed with new steps
         // We invalidate for the specific site
-        $invalidator = new \Piwik\Archive\Invalidator();
-        $invalidator->rememberToInvalidateArchivedReports($idSite, \Piwik\Date::today());
-        
+        $invalidator = \Piwik\Container\StaticContainer::get('Piwik\Archive\ArchiveInvalidator');
+        $invalidator->rememberToInvalidateArchivedReportsLater($idSite, \Piwik\Date::today());
+
         return true;
     }
 
