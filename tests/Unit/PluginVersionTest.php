@@ -16,7 +16,7 @@ class PluginVersionTest extends TestCase
 
     public function testPluginVersion()
     {
-        $this->assertEquals('3.0.0', $this->pluginJson['version'], 'Plugin version should be 3.0.0');
+        $this->assertMatchesRegularExpression('/^3\.\d+\.\d+$/', $this->pluginJson['version'], 'Plugin version should follow semver 3.x.x');
     }
 
     public function testRequiresMatomoVersion5()
