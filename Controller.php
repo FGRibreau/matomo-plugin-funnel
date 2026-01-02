@@ -4,7 +4,6 @@ namespace Piwik\Plugins\FunnelInsights;
 
 use Piwik\Plugin\Controller as PluginController;
 use Piwik\Piwik;
-use Piwik\View;
 
 class Controller extends PluginController
 {
@@ -12,22 +11,42 @@ class Controller extends PluginController
     {
         Piwik::checkUserHasViewAccess($this->idSite);
 
-        $view = new View('@FunnelInsights/index');
-        $view->funnels = API::getInstance()->getFunnels($this->idSite);
-        $this->setBasicVariablesView($view);
+        return $this->renderTemplate('@FunnelInsights/index', [
+            'funnels' => API::getInstance()->getFunnels($this->idSite),
+        ]);
+    }
 
-        return $view->render();
+    public function viewFunnel()
+    {
+        Piwik::checkUserHasViewAccess($this->idSite);
+
+        $idFunnel = \Piwik\Common::getRequestVar('idFunnel', 0, 'int');
+
+        if ($idFunnel <= 0) {
+            $this->redirectToIndex('FunnelInsights', 'index');
+            return;
+        }
+
+        $funnel = API::getInstance()->getFunnel($this->idSite, $idFunnel);
+
+        if (!$funnel) {
+            $this->redirectToIndex('FunnelInsights', 'index');
+            return;
+        }
+
+        return $this->renderTemplate('@FunnelInsights/viewFunnel', [
+            'funnel' => $funnel,
+            'funnelReport' => API::getInstance()->getFunnelReport($this->idSite, $idFunnel),
+        ]);
     }
 
     public function manage()
     {
         Piwik::checkUserHasAdminAccess($this->idSite);
 
-        $view = new View('@FunnelInsights/manage');
-        $view->funnels = API::getInstance()->getFunnels($this->idSite);
-        $this->setGeneralVariablesView($view);
-
-        return $view->render();
+        return $this->renderTemplate('@FunnelInsights/manage', [
+            'funnels' => API::getInstance()->getFunnels($this->idSite),
+        ]);
     }
 
     public function edit()
@@ -36,18 +55,17 @@ class Controller extends PluginController
 
         $idFunnel = \Piwik\Common::getRequestVar('idFunnel', 0, 'int');
 
-        $view = new View('@FunnelInsights/edit');
+        $funnel = null;
         if ($idFunnel > 0) {
-            $view->funnel = API::getInstance()->getFunnel($this->idSite, $idFunnel);
+            $funnel = API::getInstance()->getFunnel($this->idSite, $idFunnel);
         }
 
-        // Fetch Goals
         $goals = \Piwik\Plugins\Goals\API::getInstance()->getGoals($this->idSite);
-        $view->goals = $goals;
 
-        $this->setGeneralVariablesView($view);
-
-        return $view->render();
+        return $this->renderTemplate('@FunnelInsights/edit', [
+            'funnel' => $funnel,
+            'goals' => $goals,
+        ]);
     }
     
     public function save()

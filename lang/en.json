@@ -46,6 +46,14 @@
         "ShowAllLog": "Show all funnel visits log",
         "Actions": "Actions",
         "Updated": "Updated",
-        "Evolution": "Evolution"
+        "Evolution": "Evolution",
+        "TotalEntries": "Total Entries",
+        "TotalConversions": "Total Conversions",
+        "ConversionRate": "Conversion Rate",
+        "NoDataForPeriod": "No data available for the selected period.",
+        "BackToFunnels": "Back to Funnels",
+        "AssociatedGoal": "Associated Goal",
+        "SelectFunnelToView": "Select a funnel to view detailed analytics.",
+        "NoActiveFunnels": "No active funnels found. Create your first funnel to start tracking conversion paths."
     }
 }

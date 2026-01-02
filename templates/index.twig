@@ -1,37 +1,45 @@
 <div class="card">
     <div class="card-content">
-        <h2 class="card-title">{{ 'FunnelInsights_Funnels'|translate }}</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 class="card-title" style="margin: 0;">{{ 'FunnelInsights_Funnels'|translate }}</h2>
+            <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'manage'}) }}" class="btn btn-flat">
+                <span class="icon-settings"></span> {{ 'FunnelInsights_ManageFunnels'|translate }}
+            </a>
+        </div>
 
-        {% if funnels|length > 0 %}
+        {% set activeFunnels = funnels|filter(f => f.active) %}
+
+        {% if activeFunnels|length > 0 %}
+            <p class="card-description" style="margin-bottom: 16px;">
+                {{ 'FunnelInsights_SelectFunnelToView'|translate }}
+            </p>
             <div class="funnelList">
-                {% for funnel in funnels %}
-                    {% if funnel.active %}
-                    <div class="card" style="margin-bottom: 16px;">
-                        <div class="card-content">
-                            <h3 class="card-title" style="font-size: 16px;">{{ funnel.name }}</h3>
-                            <p class="card-description">
-                                <strong>{{ 'FunnelInsights_Steps'|translate }}:</strong> {{ funnel.steps|length }}
+                {% for funnel in activeFunnels %}
+                <div class="card" style="margin-bottom: 12px; border: 1px solid #e0e0e0;">
+                    <div class="card-content" style="display: flex; justify-content: space-between; align-items: center; padding: 16px;">
+                        <div>
+                            <h3 class="card-title" style="font-size: 16px; margin: 0 0 4px 0;">{{ funnel.name }}</h3>
+                            <p class="card-description" style="margin: 0; font-size: 13px; color: #666;">
+                                <span class="icon-funnel"></span> {{ funnel.steps|length }} {{ 'FunnelInsights_Steps'|translate|lower }}
                                 {% if funnel.goal_id %}
-                                    | <strong>{{ 'FunnelInsights_Goal'|translate }}:</strong> #{{ funnel.goal_id }}
+                                    &nbsp;&bull;&nbsp; <span class="icon-goal"></span> {{ 'FunnelInsights_Goal'|translate }} #{{ funnel.goal_id }}
                                 {% endif %}
                             </p>
-                            <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'viewFunnel', 'idFunnel': funnel.idfunnel}) }}" class="btn">
-                                {{ 'FunnelInsights_FunnelDetails'|translate }}
-                            </a>
                         </div>
+                        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'viewFunnel', 'idFunnel': funnel.idfunnel}) }}" class="btn">
+                            {{ 'FunnelInsights_FunnelDetails'|translate }}
+                        </a>
                     </div>
-                    {% endif %}
+                </div>
                 {% endfor %}
             </div>
         {% else %}
-            <div class="notification system notification-info">
-                {{ 'FunnelInsights_NoFunnelsFound'|translate }}
+            <div class="notification system notification-info" style="margin-bottom: 16px;">
+                <p style="margin: 0;">{{ 'FunnelInsights_NoActiveFunnels'|translate }}</p>
             </div>
-            <p style="margin-top: 16px;">
-                <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'manage'}) }}" class="btn">
-                    {{ 'FunnelInsights_ManageFunnels'|translate }}
-                </a>
-            </p>
+            <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'edit'}) }}" class="btn">
+                <span class="icon-add"></span> {{ 'FunnelInsights_CreateFunnel'|translate }}
+            </a>
         {% endif %}
     </div>
 </div>
