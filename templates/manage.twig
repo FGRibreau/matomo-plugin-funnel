@@ -33,8 +33,8 @@
                     <td>{{ funnel.updated_date }}</td>
                     <td>
                         <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'edit', 'idFunnel': funnel.idfunnel}) }}" class="table-action icon-edit" title="{{ 'General_Edit'|translate }}"></a>
-                        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'duplicate', 'idFunnel': funnel.idfunnel}) }}" class="table-action icon-copy" title="Duplicate" onclick="return confirm('Duplicate this funnel?');"></a>
-                        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'delete', 'idFunnel': funnel.idfunnel}) }}" class="table-action icon-delete" title="{{ 'General_Delete'|translate }}" onclick="return confirm('{{ 'FunnelInsights_ConfirmDelete'|translate }}');"></a>
+                        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'duplicate', 'idFunnel': funnel.idfunnel, 'token_auth': token_auth}) }}" class="table-action icon-copy" title="Duplicate" onclick="return confirm('Duplicate this funnel?');"></a>
+                        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'delete', 'idFunnel': funnel.idfunnel, 'token_auth': token_auth}) }}" class="table-action icon-delete" title="{{ 'General_Delete'|translate }}" onclick="return confirm('{{ 'FunnelInsights_ConfirmDelete'|translate }}');"></a>
                     </td>
                 </tr>
                 {% else %}
