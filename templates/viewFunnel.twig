@@ -1,0 +1,82 @@
+<div class="card">
+    <div class="card-content">
+        <h2 class="card-title">{{ funnel.name }}</h2>
+
+        {% if funnel.goal_id %}
+        <p class="card-description">
+            <span class="icon-goal"></span>
+            {{ 'FunnelInsights_AssociatedGoal'|translate }}: #{{ funnel.goal_id }}
+        </p>
+        {% endif %}
+
+        <div class="funnel-stats" style="display: flex; gap: 24px; margin: 24px 0;">
+            <div class="stat-box" style="flex: 1; text-align: center; padding: 16px; background: #f5f5f5; border-radius: 8px;">
+                <div style="font-size: 28px; font-weight: bold; color: #333;">{{ funnelReport.total_entries|default(0)|number_format }}</div>
+                <div style="font-size: 12px; color: #666; text-transform: uppercase;">{{ 'FunnelInsights_TotalEntries'|translate }}</div>
+            </div>
+            <div class="stat-box" style="flex: 1; text-align: center; padding: 16px; background: #f5f5f5; border-radius: 8px;">
+                <div style="font-size: 28px; font-weight: bold; color: #4caf50;">{{ funnelReport.total_conversions|default(0)|number_format }}</div>
+                <div style="font-size: 12px; color: #666; text-transform: uppercase;">{{ 'FunnelInsights_TotalConversions'|translate }}</div>
+            </div>
+            <div class="stat-box" style="flex: 1; text-align: center; padding: 16px; background: #f5f5f5; border-radius: 8px;">
+                <div style="font-size: 28px; font-weight: bold; color: #2196f3;">{{ funnelReport.conversion_rate|default(0)|number_format(1) }}%</div>
+                <div style="font-size: 12px; color: #666; text-transform: uppercase;">{{ 'FunnelInsights_ConversionRate'|translate }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="card-title">{{ 'FunnelInsights_Steps'|translate }}</h3>
+
+        {% if funnelReport.steps is defined and funnelReport.steps|length > 0 %}
+            <div class="funnel-visualization">
+                {% for step in funnelReport.steps %}
+                <div class="funnel-step" style="margin-bottom: 16px; display: flex; align-items: center; gap: 16px;">
+                    <div class="step-number" style="width: 32px; height: 32px; background: #2196f3; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                        {{ loop.index }}
+                    </div>
+                    <div class="step-content" style="flex: 1;">
+                        <div class="step-name" style="font-weight: 600; margin-bottom: 4px;">{{ step.name|default(step.step_name|default('Step ' ~ loop.index)) }}</div>
+                        <div class="step-metrics" style="display: flex; gap: 24px; font-size: 13px; color: #666;">
+                            <span><strong>{{ step.nb_visits|default(0)|number_format }}</strong> {{ 'FunnelInsights_Visits'|translate }}</span>
+                            {% if step.rate is defined %}
+                            <span style="color: {% if step.rate >= 50 %}#4caf50{% else %}#ff9800{% endif %};">
+                                {{ step.rate|number_format(1) }}% {{ 'FunnelInsights_Proceeded'|translate }}
+                            </span>
+                            {% endif %}
+                            {% if step.nb_drop_off is defined and step.nb_drop_off > 0 %}
+                            <span style="color: #f44336;">
+                                -{{ step.nb_drop_off|number_format }} {{ 'FunnelInsights_DropOff'|translate }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="step-bar" style="margin-top: 8px; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+                            <div style="height: 100%; width: {{ step.fill_rate|default(100) }}%; background: linear-gradient(90deg, #2196f3, #4caf50); border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                </div>
+                {% if not loop.last %}
+                <div class="step-connector" style="margin-left: 15px; height: 20px; border-left: 2px dashed #ccc;"></div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="notification system notification-info">
+                {{ 'FunnelInsights_NoDataForPeriod'|translate }}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-content" style="display: flex; gap: 12px;">
+        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'index'}) }}" class="btn btn-flat">
+            <span class="icon-arrow-left"></span> {{ 'FunnelInsights_BackToFunnels'|translate }}
+        </a>
+        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'edit', 'idFunnel': funnel.idfunnel}) }}" class="btn">
+            <span class="icon-edit"></span> {{ 'FunnelInsights_EditFunnel'|translate }}
+        </a>
+    </div>
+</div>
