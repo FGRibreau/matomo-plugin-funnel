@@ -210,8 +210,7 @@ test.describe('FunnelInsights CRUD Operations', () => {
         await expect(page.locator('table.entityTable')).toContainText(`${originalName} (Copy)`);
     });
 
-    test.skip('should validate funnel steps using Test button', async ({ page }) => {
-        // Skip: Validation feature not yet implemented in plugin
+    test('should validate funnel steps using Test button', async ({ page }) => {
         // Navigate to create funnel page
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
@@ -220,7 +219,7 @@ test.describe('FunnelInsights CRUD Operations', () => {
         // Add a step with URL contains pattern
         await addFunnelStep(page, 'Test Page', '/checkout');
 
-        // Use the validator section - the input has a specific placeholder
+        // Use the validator section
         await page.fill('.validator-section input[placeholder="http://example.com/checkout"]', 'http://example.com/checkout/step1');
         await page.click('.validator-section button:has-text("Test")');
 

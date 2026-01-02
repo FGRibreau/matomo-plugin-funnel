@@ -122,6 +122,26 @@ class Controller extends ControllerAdmin
         $this->redirectToIndex('FunnelInsights', 'manage');
     }
 
+    public function validateSteps()
+    {
+        $idSite = Common::getRequestVar('idSite', 0, 'int');
+        Piwik::checkUserHasAdminAccess($idSite);
+
+        $stepsJson = Common::getRequestVar('steps', '[]', 'string');
+        $testUrl = Common::getRequestVar('testUrl', '', 'string');
+
+        // Common::getRequestVar HTML-encodes the string, so we need to decode it
+        $stepsJson = Common::unsanitizeInputValue($stepsJson);
+
+        $steps = json_decode($stepsJson, true);
+
+        $results = API::getInstance()->validateFunnelSteps($idSite, $steps, $testUrl);
+
+        header('Content-Type: application/json');
+        echo json_encode($results);
+        exit;
+    }
+
     public function delete()
     {
         Piwik::checkUserHasAdminAccess($this->idSite);
