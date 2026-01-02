@@ -5,9 +5,8 @@
     <div class="card-content">
         <h2 class="card-title">{{ funnel is defined and funnel ? 'FunnelInsights_EditFunnel'|translate : 'FunnelInsights_CreateFunnel'|translate }}</h2>
 
-        <form action="{{ linkTo({'module': 'FunnelInsights', 'action': 'save'}) }}" method="post" class="editForm">
+        <form action="{{ linkTo({'module': 'FunnelInsights', 'action': 'save', 'token_auth': token_auth}) }}" method="post" class="editForm">
             <input type="hidden" name="idFunnel" value="{{ funnel.idfunnel|default(0) }}" />
-            <input type="hidden" name="token_auth" value="{{ token_auth }}" />
 
             <div class="form-group row">
                 <div class="col s12">
