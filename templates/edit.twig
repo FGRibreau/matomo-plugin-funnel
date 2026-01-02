@@ -1,6 +1,9 @@
+{% extends 'admin.twig' %}
+
+{% block content %}
 <div class="card">
     <div class="card-content">
-        <h2 class="card-title">{{ funnel is defined ? 'FunnelInsights_EditFunnel'|translate : 'FunnelInsights_CreateFunnel'|translate }}</h2>
+        <h2 class="card-title">{{ funnel is defined and funnel ? 'FunnelInsights_EditFunnel'|translate : 'FunnelInsights_CreateFunnel'|translate }}</h2>
 
         <form action="{{ linkTo({'module': 'FunnelInsights', 'action': 'save'}) }}" method="post" class="editForm">
             <input type="hidden" name="idFunnel" value="{{ funnel.idfunnel|default(0) }}" />
@@ -74,3 +77,4 @@
         </form>
     </div>
 </div>
+{% endblock %}
