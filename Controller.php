@@ -2,11 +2,11 @@
 
 namespace Piwik\Plugins\FunnelInsights;
 
-use Piwik\Plugin\Controller as AbstractController;
+use Piwik\Plugin\Controller as PluginController;
 use Piwik\Piwik;
 use Piwik\View;
 
-class Controller extends AbstractController
+class Controller extends PluginController
 {
     public function index()
     {
@@ -22,31 +22,31 @@ class Controller extends AbstractController
     public function manage()
     {
         Piwik::checkUserHasAdminAccess($this->idSite);
-        
+
         $view = new View('@FunnelInsights/manage');
         $view->funnels = API::getInstance()->getFunnels($this->idSite);
-        $this->setBasicVariablesView($view);
-        
+        $this->setGeneralVariablesView($view);
+
         return $view->render();
     }
 
     public function edit()
     {
         Piwik::checkUserHasAdminAccess($this->idSite);
-        
+
         $idFunnel = \Piwik\Common::getRequestVar('idFunnel', 0, 'int');
-        
+
         $view = new View('@FunnelInsights/edit');
         if ($idFunnel > 0) {
             $view->funnel = API::getInstance()->getFunnel($this->idSite, $idFunnel);
         }
-        
+
         // Fetch Goals
         $goals = \Piwik\Plugins\Goals\API::getInstance()->getGoals($this->idSite);
         $view->goals = $goals;
 
-        $this->setBasicVariablesView($view);
-        
+        $this->setGeneralVariablesView($view);
+
         return $view->render();
     }
     
