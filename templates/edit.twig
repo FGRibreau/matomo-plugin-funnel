@@ -1,33 +1,27 @@
-{% extends 'admin.twig' %}
+<div class="card">
+    <div class="card-content">
+        <h2 class="card-title">{{ funnel is defined ? 'Edit' : 'Create' }} Funnel</h2>
 
-{% block content %}
-    <h2>{{ funnel is defined ? 'Edit' : 'Create' }} Funnel</h2>
-    
-    <form action="{{ linkTo({'module': 'FunnelInsights', 'action': 'save'}) }}" method="post" class="form-horizontal">
-        <input type="hidden" name="idFunnel" value="{{ funnel.idfunnel|default(0) }}" />
-        <input type="hidden" name="token_auth" value="{{ token_auth }}" />
-        
-        <div class="form-group">
-            <label class="control-label col-md-2">Name</label>
-            <div class="col-md-6">
-                <input type="text" name="name" value="{{ funnel.name|default('') }}" class="form-control" required />
+        <form action="{{ linkTo({'module': 'FunnelInsights', 'action': 'save'}) }}" method="post">
+            <input type="hidden" name="idFunnel" value="{{ funnel.idfunnel|default(0) }}" />
+            <input type="hidden" name="token_auth" value="{{ token_auth }}" />
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Name</label>
+                <input type="text" name="name" value="{{ funnel.name|default('') }}" class="form-control" required style="width: 100%; max-width: 400px; padding: 8px;" />
             </div>
-        </div>
-        
-        <div class="form-group">
-            <label class="control-label col-md-2">Active</label>
-            <div class="col-md-6">
-                 <select name="active" class="form-control">
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Active</label>
+                <select name="active" class="form-control" style="width: 100%; max-width: 400px; padding: 8px;">
                     <option value="1" {% if funnel.active|default(0) == 1 %}selected{% endif %}>Yes</option>
                     <option value="0" {% if funnel.active|default(0) == 0 %}selected{% endif %}>No</option>
                 </select>
             </div>
-        </div>
 
-        <div class="form-group">
-            <label class="control-label col-md-2">Link to Goal (Optional)</label>
-            <div class="col-md-6">
-                 <select name="goal_id" class="form-control">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Link to Goal (Optional)</label>
+                <select name="goal_id" class="form-control" style="width: 100%; max-width: 400px; padding: 8px;">
                     <option value="">-- No Goal --</option>
                     {% for goal in goals %}
                         <option value="{{ goal.idgoal }}" {% if funnel.goal_id|default('') == goal.idgoal %}selected{% endif %}>
@@ -35,43 +29,34 @@
                         </option>
                     {% endfor %}
                 </select>
-                <p class="help-block">If selected, this funnel will be associated with the goal. (Note: "Funnel tracking" must be enabled in Goal settings).</p>
+                <p style="color: #666; font-size: 12px; margin-top: 5px;">If selected, this funnel will be associated with the goal.</p>
             </div>
-        </div>
 
-        <div class="form-group">
-            <label class="control-label col-md-2">Strict Mode</label>
-            <div class="col-md-6">
-                <div class="checkbox">
-                    <label>
-                        <input type="checkbox" name="strict_mode" value="1" {% if funnel.strict_mode|default(0) == 1 %}checked{% endif %}> Enable strict mode
-                        <p class="help-block">If enabled, visitors must follow the exact path without visiting other pages between funnel steps.</p>
-                    </label>
-                </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">
+                    <input type="checkbox" name="strict_mode" value="1" {% if funnel.strict_mode|default(0) == 1 %}checked{% endif %}>
+                    <strong>Enable strict mode</strong>
+                </label>
+                <p style="color: #666; font-size: 12px; margin-top: 5px;">If enabled, visitors must follow the exact path without visiting other pages between funnel steps.</p>
             </div>
-        </div>
 
-        <div class="form-group">
-            <label class="control-label col-md-2">Time Limit between Steps (seconds)</label>
-            <div class="col-md-6">
-                <input type="number" name="step_time_limit" value="{{ funnel.step_time_limit|default(0) }}" class="form-control" min="0" />
-                <p class="help-block">Optional. If set (e.g., 60), a visitor must complete a step transition within this many seconds. Set to 0 for no limit.</p>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Time Limit between Steps (seconds)</label>
+                <input type="number" name="step_time_limit" value="{{ funnel.step_time_limit|default(0) }}" class="form-control" min="0" style="width: 100%; max-width: 200px; padding: 8px;" />
+                <p style="color: #666; font-size: 12px; margin-top: 5px;">Optional. If set (e.g., 60), a visitor must complete a step transition within this many seconds. Set to 0 for no limit.</p>
             </div>
-        </div>
 
-        <div class="form-group">
-            <label class="control-label col-md-2">Steps Configuration</label>
-            <div class="col-md-10">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Steps Configuration</label>
                 <div id="funnel-editor-app">
                     <funnel-editor :initial-steps="{{ funnel.steps|default([])|json_encode }}"></funnel-editor>
                 </div>
-                <!-- Fallback or noscript handling if needed -->
             </div>
-        </div>
-        
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'manage'}) }}" class="btn btn-link">Cancel</a>
-        </div>
-    </form>
-{% endblock %}
+
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'manage'}) }}" class="btn" style="margin-left: 10px;">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
