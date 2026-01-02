@@ -93,16 +93,18 @@ class API extends \Piwik\Plugin\API
     public function getFunnelReport($idSite, $period, $date, $idFunnel)
     {
         Piwik::checkUserHasViewAccess($idSite);
-        
+
         $archive = Archive::build($idSite, $period, $date);
-        $dataTable = $archive->getBlob('FunnelInsights_Funnel_' . $idFunnel);
-        
-        if (!$dataTable) {
+        $dataTable = $archive->getDataTable('FunnelInsights_Funnel_' . $idFunnel);
+
+        if (!$dataTable || $dataTable->getRowsCount() === 0) {
             return array();
         }
 
-        $dataTable->queueFilter('ReplaceColumnNames');
-        $data = $dataTable->getDataTable()->asArray();
+        $data = array();
+        foreach ($dataTable->getRows() as $row) {
+            $data[] = $row->getColumns();
+        }
 
         // Fetch definition to label the rows
         $funnelDef = $this->getFunnel($idSite, $idFunnel);
@@ -144,12 +146,12 @@ class API extends \Piwik\Plugin\API
     public function getFunnelEvolution($idSite, $period, $date, $idFunnel)
     {
         Piwik::checkUserHasViewAccess($idSite);
-        
-        // Fetch evolution of the specific Funnel blob
+
+        // Fetch evolution of the specific Funnel
         // This returns a Set of DataTables (one per period)
         $archive = Archive::build($idSite, $period, $date);
-        $dataTable = $archive->getBlob('FunnelInsights_Funnel_' . $idFunnel);
-        
+        $dataTable = $archive->getDataTable('FunnelInsights_Funnel_' . $idFunnel);
+
         return $dataTable;
     }
     
@@ -160,19 +162,19 @@ class API extends \Piwik\Plugin\API
     public function getOverview($idSite, $period, $date)
     {
         Piwik::checkUserHasViewAccess($idSite);
-        
+
         $funnels = $this->dao->getAllForSite($idSite);
         $reportData = array();
-        
+
         $archive = Archive::build($idSite, $period, $date);
-        
+
         foreach ($funnels as $funnel) {
             if (!$funnel['active']) continue;
-            
+
             $idFunnel = $funnel['idfunnel'];
-            $dataTable = $archive->getBlob('FunnelInsights_Funnel_' . $idFunnel);
-            
-            if (!$dataTable) {
+            $dataTable = $archive->getDataTable('FunnelInsights_Funnel_' . $idFunnel);
+
+            if (!$dataTable || $dataTable->getRowsCount() === 0) {
                 $reportData[] = array(
                     'label' => $funnel['name'],
                     'idfunnel' => $idFunnel,
@@ -182,31 +184,23 @@ class API extends \Piwik\Plugin\API
                 );
                 continue;
             }
-            
-            // Process DataTable (summing up if it's a Set/Archive)
-            // For 'day', it's a simple DataTable.
-            // For 'range', it might need aggregation.
-            // Assuming getBlob returns the aggregated table for the requested period/date.
-            
-            $table = $dataTable->getDataTable();
-            $rows = $table->asArray();
-            
+
             $entries = 0;
             $conversions = 0;
-            
+
+            $rows = $dataTable->getRows();
             if (!empty($rows)) {
                 // Step 0 is usually entry
-                $firstStep = reset($rows);
-                $entries = isset($firstStep['entries']) ? $firstStep['entries'] : 0;
-                
+                $firstRow = $dataTable->getFirstRow();
+                $entries = $firstRow ? ($firstRow->getColumn('entries') ?: 0) : 0;
+
                 // Last step is conversion
-                $lastStep = end($rows);
-                $conversions = isset($lastStep['visits']) ? $lastStep['visits'] : 0;
-                // Note: 'visits' at last step = completed flow = conversions.
+                $lastRow = $dataTable->getLastRow();
+                $conversions = $lastRow ? ($lastRow->getColumn('visits') ?: 0) : 0;
             }
-            
+
             $rate = ($entries > 0) ? ($conversions / $entries * 100) : 0;
-            
+
             $reportData[] = array(
                 'label' => $funnel['name'],
                 'idfunnel' => $idFunnel,
@@ -215,11 +209,11 @@ class API extends \Piwik\Plugin\API
                 'conversion_rate' => number_format($rate, 1) . '%'
             );
         }
-        
+
         // Convert to DataTable for renderer
         $resultTable = new \Piwik\DataTable();
         $resultTable->addRowsFromSimpleArray($reportData);
-        
+
         return $resultTable;
     }
 
