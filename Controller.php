@@ -38,9 +38,12 @@ class Controller extends ControllerAdmin
             return;
         }
 
+        $period = Common::getRequestVar('period', 'day', 'string');
+        $date = Common::getRequestVar('date', 'yesterday', 'string');
+
         return $this->renderTemplate('@FunnelInsights/viewFunnel', [
             'funnel' => $funnel,
-            'funnelReport' => API::getInstance()->getFunnelReport($this->idSite, $idFunnel),
+            'funnelReport' => API::getInstance()->getFunnelReport($this->idSite, $period, $date, $idFunnel),
         ]);
     }
 

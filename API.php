@@ -95,7 +95,7 @@ class API extends \Piwik\Plugin\API
         Piwik::checkUserHasViewAccess($idSite);
         
         $archive = Archive::build($idSite, $period, $date);
-        $dataTable = $archive->getBlob('Funnel_' . $idFunnel);
+        $dataTable = $archive->getBlob('FunnelInsights_Funnel_' . $idFunnel);
         
         if (!$dataTable) {
             return array();
@@ -148,7 +148,7 @@ class API extends \Piwik\Plugin\API
         // Fetch evolution of the specific Funnel blob
         // This returns a Set of DataTables (one per period)
         $archive = Archive::build($idSite, $period, $date);
-        $dataTable = $archive->getBlob('Funnel_' . $idFunnel);
+        $dataTable = $archive->getBlob('FunnelInsights_Funnel_' . $idFunnel);
         
         return $dataTable;
     }
@@ -170,7 +170,7 @@ class API extends \Piwik\Plugin\API
             if (!$funnel['active']) continue;
             
             $idFunnel = $funnel['idfunnel'];
-            $dataTable = $archive->getBlob('Funnel_' . $idFunnel);
+            $dataTable = $archive->getBlob('FunnelInsights_Funnel_' . $idFunnel);
             
             if (!$dataTable) {
                 $reportData[] = array(
