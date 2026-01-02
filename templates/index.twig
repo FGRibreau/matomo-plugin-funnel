@@ -3,27 +3,31 @@
         <h2 class="card-title">{{ 'FunnelInsights_Funnels'|translate }}</h2>
 
         {% if funnels|length > 0 %}
-            <div class="funnel-list">
+            <div class="funnelList">
                 {% for funnel in funnels %}
                     {% if funnel.active %}
-                    <div class="funnel-card" style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; background: #fff;">
-                        <h3 style="margin-top: 0;">{{ funnel.name }}</h3>
-                        <p>
-                            <strong>{{ 'FunnelInsights_Steps'|translate }}:</strong> {{ funnel.steps|length }}
-                            {% if funnel.goal_id %}
-                                | <strong>{{ 'FunnelInsights_Goal'|translate }}:</strong> #{{ funnel.goal_id }}
-                            {% endif %}
-                        </p>
-                        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'viewFunnel', 'idFunnel': funnel.idfunnel}) }}" class="btn btn-primary">
-                            {{ 'FunnelInsights_FunnelDetails'|translate }}
-                        </a>
+                    <div class="card" style="margin-bottom: 16px;">
+                        <div class="card-content">
+                            <h3 class="card-title" style="font-size: 16px;">{{ funnel.name }}</h3>
+                            <p class="card-description">
+                                <strong>{{ 'FunnelInsights_Steps'|translate }}:</strong> {{ funnel.steps|length }}
+                                {% if funnel.goal_id %}
+                                    | <strong>{{ 'FunnelInsights_Goal'|translate }}:</strong> #{{ funnel.goal_id }}
+                                {% endif %}
+                            </p>
+                            <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'viewFunnel', 'idFunnel': funnel.idfunnel}) }}" class="btn">
+                                {{ 'FunnelInsights_FunnelDetails'|translate }}
+                            </a>
+                        </div>
                     </div>
                     {% endif %}
                 {% endfor %}
             </div>
         {% else %}
-            <p>{{ 'FunnelInsights_NoFunnelsFound'|translate }}</p>
-            <p>
+            <div class="notification system notification-info">
+                {{ 'FunnelInsights_NoFunnelsFound'|translate }}
+            </div>
+            <p style="margin-top: 16px;">
                 <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'manage'}) }}" class="btn">
                     {{ 'FunnelInsights_ManageFunnels'|translate }}
                 </a>
