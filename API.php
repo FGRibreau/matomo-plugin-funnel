@@ -270,7 +270,7 @@ class API extends \Piwik\Plugin\API
                 'idfunnel' => $idFunnel,
                 'entries' => $entries,
                 'conversions' => $conversions,
-                'conversion_rate' => number_format($rate, 1) . '%'
+                'conversion_rate' => round($rate, 1)
             );
         }
 
@@ -278,7 +278,12 @@ class API extends \Piwik\Plugin\API
         $resultTable = new \Piwik\DataTable();
         $resultTable->addRowsFromSimpleArray($reportData);
 
-        return $resultTable;
+        // RowEvolution always expects a DataTable\Map (one table per period).
+        // Wrap in Map to maintain API compatibility.
+        $map = new Map();
+        $map->setKeyName('date');
+        $map->addTable($resultTable, $date);
+        return $map;
     }
 
     /**

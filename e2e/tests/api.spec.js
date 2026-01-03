@@ -234,6 +234,50 @@ test.describe('FunnelInsights API Tests', () => {
         expect(text).not.toContain('getDataTables');
     });
 
+    // Non-regression test for getOverview RowEvolution bug (v3.0.25 fix)
+    // When RowEvolution is triggered from the Overview page, Matomo's API calls getDataTables()
+    // on the result. This test ensures getOverview returns a Map structure compatible with RowEvolution.
+    test('API: getOverview with single date returns Map for RowEvolution compatibility', async ({ request }) => {
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getOverview',
+                idSite: idSite,
+                period: 'day',
+                date: 'today',
+                format: 'JSON',
+            },
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Call to undefined method');
+        expect(text).not.toContain('getDataTables');
+        expect(text).not.toContain('DataTable::getDataTables');
+        expect(() => JSON.parse(text)).not.toThrow();
+    });
+
+    test('API: getOverview RowEvolution simulation with date comparison', async ({ request }) => {
+        // RowEvolution compares data across multiple periods
+        // This simulates how RowEvolution fetches data from getOverview
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getOverview',
+                idSite: idSite,
+                period: 'day',
+                date: 'last7',
+                format: 'JSON',
+            },
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Call to undefined method');
+        expect(text).not.toContain('getDataTables');
+        expect(text).not.toContain('DataTable::getDataTables');
+    });
+
     test('API: Plugin responds without PHP syntax errors', async ({ request }) => {
         // Verify the plugin loads without PHP syntax errors
         const response = await request.get(`${matomoUrl}/index.php`, {

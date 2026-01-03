@@ -44,7 +44,7 @@
                     html += '<td><a href="' + viewUrl + '">' + (row.label || 'Funnel') + '</a></td>';
                     html += '<td>' + (row.entries || 0) + '</td>';
                     html += '<td>' + (row.conversions || 0) + '</td>';
-                    html += '<td>' + (row.conversion_rate || '0%') + '</td>';
+                    html += '<td>' + (row.conversion_rate || 0) + ' %</td>';
                     html += '</tr>';
                 });
 
