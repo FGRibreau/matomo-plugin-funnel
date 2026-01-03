@@ -4,6 +4,8 @@ namespace Piwik\Plugins\FunnelInsights;
 
 use Piwik\Piwik;
 use Piwik\Archive;
+use Piwik\DataTable;
+use Piwik\DataTable\Map;
 use Piwik\Plugins\FunnelInsights\DAO\FunnelConfig;
 
 class API extends \Piwik\Plugin\API
@@ -15,9 +17,37 @@ class API extends \Piwik\Plugin\API
         $this->dao = $dao ?: new FunnelConfig();
     }
 
-    // ... (Management methods from previous step - assuming they are preserved or I need to re-include them?
-    // The previous write_file overwrote API.php? NO, I need to Append or Merge.
-    // The previous tool usage was write_file with full content. I must include previous methods.)
+    /**
+     * Extracts a single DataTable from an archive result.
+     * Archive::getDataTable() may return a DataTable or a DataTable\Map (for date ranges).
+     * This helper normalizes the result to a single DataTable.
+     *
+     * @param DataTable|Map|null $result
+     * @return DataTable|null
+     */
+    private function extractDataTable($result)
+    {
+        if ($result === null) {
+            return null;
+        }
+
+        // If it's already a plain DataTable, return it
+        if ($result instanceof DataTable && !($result instanceof Map)) {
+            return $result;
+        }
+
+        // If it's a Map (date range), get the merged/last table
+        if ($result instanceof Map) {
+            $tables = $result->getDataTables();
+            if (empty($tables)) {
+                return null;
+            }
+            // Return the last table in the range (most recent)
+            return end($tables);
+        }
+
+        return null;
+    }
 
     public function createFunnel($idSite, $name, $steps, $goalId = null, $active = 0, $strictMode = 0, $stepTimeLimit = 0)
     {
@@ -95,7 +125,8 @@ class API extends \Piwik\Plugin\API
         Piwik::checkUserHasViewAccess($idSite);
 
         $archive = Archive::build($idSite, $period, $date);
-        $dataTable = $archive->getDataTable('FunnelInsights_Funnel_' . $idFunnel);
+        $result = $archive->getDataTable('FunnelInsights_Funnel_' . $idFunnel);
+        $dataTable = $this->extractDataTable($result);
 
         if (!$dataTable || $dataTable->getRowsCount() === 0) {
             return array();
@@ -180,7 +211,8 @@ class API extends \Piwik\Plugin\API
             if (!$funnel['active']) continue;
 
             $idFunnel = $funnel['idfunnel'];
-            $dataTable = $archive->getDataTable('FunnelInsights_Funnel_' . $idFunnel);
+            $result = $archive->getDataTable('FunnelInsights_Funnel_' . $idFunnel);
+            $dataTable = $this->extractDataTable($result);
 
             if (!$dataTable || $dataTable->getRowsCount() === 0) {
                 $reportData[] = array(

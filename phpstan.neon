@@ -1,0 +1,18 @@
+parameters:
+    level: 3
+    paths:
+        - .
+    excludePaths:
+        - vendor
+        - tests
+        - e2e
+        - docker
+        - node_modules
+    ignoreErrors:
+        # Matomo framework classes are not available during standalone static analysis
+        - '#Class Piwik\\\\#'
+        - '#unknown class Piwik\\\\#'
+        - '#Piwik\\\\#'
+        # Unreachable statement after return in extractDataTable is intentional fallback
+        - '#Unreachable statement#'
+    reportUnmatchedIgnoredErrors: false

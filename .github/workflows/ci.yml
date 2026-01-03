@@ -7,6 +7,20 @@ on:
     branches: [main]
 
 jobs:
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Run Static Analysis
+        run: ./scripts/run-static-analysis.sh
+
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
