@@ -84,6 +84,8 @@ class Controller extends ControllerAdmin
         $idFunnel = Common::getRequestVar('idFunnel', 0, 'int');
         $name = Common::getRequestVar('name', '', 'string');
         $stepsJson = Common::getRequestVar('steps', '[]', 'string');
+        // Common::getRequestVar HTML-encodes the string, so we need to decode it
+        $stepsJson = Common::unsanitizeInputValue($stepsJson);
         $active = Common::getRequestVar('active', 0, 'int');
         $goalId = Common::getRequestVar('goal_id', '', 'string');
         $strictMode = Common::getRequestVar('strict_mode', 0, 'int');
@@ -92,6 +94,9 @@ class Controller extends ControllerAdmin
         $goalId = ($goalId === '') ? null : (int)$goalId;
 
         $steps = json_decode($stepsJson, true);
+        if ($steps === null && $stepsJson !== '[]' && $stepsJson !== '') {
+            throw new \Exception('Invalid steps JSON format');
+        }
 
         if ($idFunnel > 0) {
             API::getInstance()->updateFunnel($idFunnel, $this->idSite, $name, $steps, $goalId, $active, $strictMode, $stepTimeLimit);
