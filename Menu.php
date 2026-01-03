@@ -7,7 +7,12 @@ use Piwik\Piwik;
 
 /**
  * FunnelInsights Menu configuration.
- * Note: configureReportingMenu was removed in Matomo 3+ - use widgets instead.
+ *
+ * In Matomo 5+, reports appear in the sidebar automatically based on:
+ * - Reports with categoryId and subcategoryId
+ * - Widgets that define category and subcategory
+ *
+ * The FunnelOverview widget creates the "Funnels" category in the reporting UI.
  */
 class Menu extends \Piwik\Plugin\Menu
 {
