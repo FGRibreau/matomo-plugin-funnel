@@ -178,16 +178,44 @@ class API extends \Piwik\Plugin\API
         return $data;
     }
     
+    /**
+     * Returns funnel evolution data for row evolution graphs.
+     * Always returns a DataTable\Map to be compatible with Matomo's RowEvolution feature.
+     *
+     * @param int $idSite
+     * @param string $period
+     * @param string $date
+     * @param int $idFunnel
+     * @return Map
+     */
     public function getFunnelEvolution($idSite, $period, $date, $idFunnel)
     {
         Piwik::checkUserHasViewAccess($idSite);
 
         // Fetch evolution of the specific Funnel
-        // This returns a Set of DataTables (one per period)
         $archive = Archive::build($idSite, $period, $date);
-        $dataTable = $archive->getDataTable('FunnelInsights_Funnel_' . $idFunnel);
+        /** @var DataTable|Map|null $result */
+        $result = $archive->getDataTable('FunnelInsights_Funnel_' . $idFunnel);
 
-        return $dataTable;
+        // RowEvolution always expects a DataTable\Map (one table per period).
+        // Already a Map - return as-is
+        if ($result instanceof Map) {
+            return $result;
+        }
+
+        // For single dates, Archive::getDataTable() returns a plain DataTable,
+        // so we wrap it in a Map to maintain API compatibility.
+        if ($result instanceof DataTable) {
+            $map = new Map();
+            $map->setKeyName('date');
+            $map->addTable($result, $date);
+            return $map;
+        }
+
+        // If null or empty, return an empty Map
+        $map = new Map();
+        $map->setKeyName('date');
+        return $map;
     }
     
     /**
