@@ -11,9 +11,34 @@ echo "  Matomo Funnels Plugin - Static Analysis"
 echo "=========================================="
 echo ""
 
-ERROR_COUNT=0
+# Step 1: Setup Matomo if not present
+if [[ ! -d "$PROJECT_DIR/.matomo" || ! -f "$PROJECT_DIR/.matomo/core/Piwik.php" ]]; then
+    echo "Setting up Matomo development environment..."
+    "$SCRIPT_DIR/setup-matomo.sh"
+    echo ""
+fi
 
-# Step 1: PHP syntax check on all PHP files
+# Step 2: Install plugin dependencies if needed
+if [[ ! -d "$PROJECT_DIR/vendor" ]]; then
+    echo "Installing plugin dependencies..."
+
+    # Find composer command
+    if command -v composer &> /dev/null; then
+        COMPOSER_CMD="composer"
+    elif [[ -f "$PROJECT_DIR/composer.phar" ]]; then
+        COMPOSER_CMD="php $PROJECT_DIR/composer.phar"
+    else
+        echo "Downloading composer..."
+        curl -sS https://getcomposer.org/composer.phar -o "$PROJECT_DIR/composer.phar"
+        COMPOSER_CMD="php $PROJECT_DIR/composer.phar"
+    fi
+
+    $COMPOSER_CMD install --no-interaction --prefer-dist
+    echo ""
+fi
+
+# Step 3: PHP syntax check
+ERROR_COUNT=0
 echo "Checking PHP syntax..."
 while IFS= read -r -d '' file; do
     if ! php -l "$file" > /dev/null 2>&1; then
@@ -21,7 +46,7 @@ while IFS= read -r -d '' file; do
         php -l "$file"
         ERROR_COUNT=$((ERROR_COUNT + 1))
     fi
-done < <(find "$PROJECT_DIR" -name "*.php" -not -path "*/vendor/*" -not -path "*/node_modules/*" -print0)
+done < <(find "$PROJECT_DIR" -name "*.php" -not -path "*/.matomo/*" -not -path "*/vendor/*" -not -path "*/node_modules/*" -print0)
 
 if [[ $ERROR_COUNT -eq 0 ]]; then
     echo "✓ All PHP files have valid syntax"
@@ -33,18 +58,14 @@ fi
 
 echo ""
 
-# Step 2: Check for common issues using grep
-echo "Checking for common issues..."
+# Step 4: Run PHPStan
+echo "Running PHPStan static analysis..."
+echo ""
 
-# Check for debug statements left in code
-if grep -r --include="*.php" -n "var_dump\|print_r\|error_log.*DEBUG\|console\.log" "$PROJECT_DIR" --exclude-dir=vendor --exclude-dir=node_modules --exclude-dir=tests 2>/dev/null; then
-    echo "⚠ Warning: Found debug statements (var_dump, print_r, etc.)"
-fi
-
-# Check for TODO/FIXME that might indicate incomplete code
-TODO_COUNT=$(grep -r --include="*.php" -c "TODO\|FIXME" "$PROJECT_DIR" --exclude-dir=vendor --exclude-dir=node_modules 2>/dev/null | grep -v ":0$" | wc -l || true)
-if [[ $TODO_COUNT -gt 0 ]]; then
-    echo "ℹ Found $TODO_COUNT file(s) with TODO/FIXME comments"
+if [[ -f "$PROJECT_DIR/vendor/bin/phpstan" ]]; then
+    "$PROJECT_DIR/vendor/bin/phpstan" analyse --no-progress "$@"
+else
+    echo "⚠ PHPStan not installed, skipping static analysis"
 fi
 
 echo ""

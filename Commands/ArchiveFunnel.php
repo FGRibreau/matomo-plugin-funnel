@@ -3,11 +3,9 @@
 namespace Piwik\Plugins\FunnelInsights\Commands;
 
 use Piwik\Plugin\ConsoleCommand;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\OutputInterface;
 use Piwik\Plugins\FunnelInsights\API;
-use Piwik\Archive\Invalidator;
+use Piwik\Archive\ArchiveInvalidator;
+use Piwik\Container\StaticContainer;
 use Piwik\Date;
 
 class ArchiveFunnel extends ConsoleCommand
@@ -58,8 +56,8 @@ class ArchiveFunnel extends ConsoleCommand
 
         $output->writeln("Invalidating reports for Funnel '$funnel[name]' (ID: $idFunnel)...");
 
-        $invalidator = new Invalidator();
-        $invalidator->rememberToInvalidateArchivedReports($idSite, Date::today());
+        $invalidator = StaticContainer::get(ArchiveInvalidator::class);
+        $invalidator->rememberToInvalidateArchivedReportsLater($idSite, Date::today());
 
         $output->writeln("<info>Success. Reports for Site $idSite invalidated for today. Run core:archive to process.</info>");
 

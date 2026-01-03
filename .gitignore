@@ -3,6 +3,9 @@
 /node_modules/
 /e2e/node_modules/
 
+# Matomo development environment
+/.matomo/
+
 # Composer
 composer.phar
 

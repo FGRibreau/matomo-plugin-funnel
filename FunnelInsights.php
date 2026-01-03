@@ -16,7 +16,6 @@ class FunnelInsights extends Plugin
         return array(
             'AssetManager.getJavaScriptFiles' => 'getJavaScriptFiles',
             'API.getSegments' => 'getSegments',
-            'TaskScheduler.getScheduledTask' => 'getScheduledTasks',
             'CustomAlerts.getAlertMetrics' => 'getAlertMetrics',
             'CustomAlerts.getAlertConditions' => 'getAlertConditions',
         );
@@ -39,11 +38,6 @@ class FunnelInsights extends Plugin
     public function getAlertConditions(&$conditions)
     {
         $conditions = array();
-    }
-
-    public function getScheduledTasks(&$tasks)
-    {
-        $tasks[] = new \Piwik\Plugins\FunnelInsights\Tasks\Cleanup();
     }
 
     public function getJavaScriptFiles(&$files)

@@ -182,9 +182,7 @@ class Archiver extends AbstractArchiver
     public function aggregateMultipleReports()
     {
          $this->getProcessor()->aggregateDataTableRecords(
-            $namePattern = 'FunnelInsights_Funnel_*',
-            $maximumRows = null,
-            $recordType = 'blob'
+            'FunnelInsights_Funnel_*'
         );
     }
     

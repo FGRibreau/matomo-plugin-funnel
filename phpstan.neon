@@ -1,18 +1,32 @@
+includes:
+    - phpstan-baseline.neon
+
 parameters:
-    level: 3
+    level: 5
     paths:
-        - .
+        - API.php
+        - Archiver.php
+        - Controller.php
+        - FunnelInsights.php
+        - Menu.php
+        - Tasks.php
+        - Columns
+        - Commands
+        - DAO
+        - Model
+        - Reports
     excludePaths:
+        - .matomo
         - vendor
         - tests
         - e2e
         - docker
         - node_modules
+    bootstrapFiles:
+        - phpstan-bootstrap.php
     ignoreErrors:
-        # Matomo framework classes are not available during standalone static analysis
-        - '#Class Piwik\\\\#'
-        - '#unknown class Piwik\\\\#'
-        - '#Piwik\\\\#'
-        # Unreachable statement after return in extractDataTable is intentional fallback
-        - '#Unreachable statement#'
+        # Matomo Report class uses init() as protected method
+        - '#Call to an undefined method Piwik\\Plugin\\Report::init\(\)#'
     reportUnmatchedIgnoredErrors: false
+    parallel:
+        maximumNumberOfProcesses: 1
