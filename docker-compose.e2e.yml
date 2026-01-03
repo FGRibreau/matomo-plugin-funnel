@@ -9,10 +9,11 @@ services:
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
-      timeout: 5s
-      retries: 20
-    volumes:
-      - matomo-db:/var/lib/mysql
+      timeout: 10s
+      retries: 30
+      start_period: 10s
+    tmpfs:
+      - /var/lib/mysql  # Use tmpfs for faster I/O in CI
 
   matomo:
     image: matomo:5
@@ -27,15 +28,16 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - matomo-data:/var/www/html
-      # Mount plugin source directly for live development/testing
+      # Mount plugin source directly
       - ./:/var/www/html/plugins/FunnelInsights:ro
+      # Shared volume for init script to copy files
+      - matomo-data:/var/www/html
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost/index.php"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 60s
+      interval: 5s
+      timeout: 10s
+      retries: 60
+      start_period: 30s
 
   # Init container that installs Matomo and the plugin
   matomo-init:
@@ -56,5 +58,4 @@ services:
     restart: "no"
 
 volumes:
-  matomo-db:
   matomo-data:

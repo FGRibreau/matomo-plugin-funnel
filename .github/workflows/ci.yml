@@ -28,8 +28,7 @@ jobs:
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    if: false  # Temporarily disabled - Docker healthcheck issues in CI
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -46,22 +45,29 @@ jobs:
           npm ci || npm install
           npx playwright install --with-deps chromium
 
-      - name: Start Matomo Stack
+      - name: Start Database
         run: |
-          docker compose version
-          docker compose -f docker-compose.e2e.yml up -d --wait || (docker compose -f docker-compose.e2e.yml logs; exit 1)
-          echo "Waiting for Matomo to be ready..."
+          docker compose -f docker-compose.e2e.yml up -d db
+          echo "Waiting for database to be ready..."
+          timeout 120 bash -c 'until docker compose -f docker-compose.e2e.yml exec -T db healthcheck.sh --connect --innodb_initialized 2>/dev/null; do sleep 2; done'
+          echo "Database is ready!"
 
-      - name: Wait for Matomo and init to complete
+      - name: Start Matomo
         run: |
-          # Wait for matomo to be healthy
-          timeout 300 bash -c 'until curl -sf http://localhost:8080/index.php; do echo "Waiting for Matomo..."; sleep 10; done'
-          echo "Matomo is responding"
-          # Wait for init container to complete (it activates the plugin)
-          timeout 120 bash -c 'while docker compose -f docker-compose.e2e.yml ps matomo-init | grep -q "running"; do echo "Waiting for init..."; sleep 5; done'
+          docker compose -f docker-compose.e2e.yml up -d matomo
+          echo "Waiting for Matomo to be ready..."
+          timeout 180 bash -c 'until curl -sf http://localhost:8080/index.php >/dev/null 2>&1; do echo "Waiting..."; sleep 5; done'
+          echo "Matomo is responding!"
+
+      - name: Run Init Container
+        run: |
+          docker compose -f docker-compose.e2e.yml up matomo-init
           echo "Init complete!"
-          # Clear cache after init
+
+      - name: Clear Matomo Cache
+        run: |
           docker compose -f docker-compose.e2e.yml exec -T matomo rm -rf /var/www/html/tmp/cache/* /var/www/html/tmp/assets/* /var/www/html/tmp/templates_c/* || true
+          docker compose -f docker-compose.e2e.yml exec -T matomo chown -R www-data:www-data /var/www/html/tmp || true
 
       - name: Run E2E Tests
         working-directory: e2e
@@ -85,8 +91,12 @@ jobs:
       - name: Matomo Logs on Failure
         if: failure()
         run: |
+          echo "=== Matomo Logs ==="
           docker compose -f docker-compose.e2e.yml logs matomo
+          echo "=== Database Logs ==="
           docker compose -f docker-compose.e2e.yml logs db
+          echo "=== Init Logs ==="
+          docker compose -f docker-compose.e2e.yml logs matomo-init
 
       - name: Stop Matomo Stack
         if: always()
