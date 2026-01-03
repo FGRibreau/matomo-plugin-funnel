@@ -24,7 +24,7 @@ done
 cp "$SOURCE_DIR/plugin.json" "$PLUGIN_DIR/"
 
 # Copy directories
-for dir in lang templates javascripts vue DAO Model Columns Commands Tasks; do
+for dir in lang templates javascripts vue DAO Model Columns Commands Tasks Reports; do
     if [ -d "$SOURCE_DIR/$dir" ]; then
         cp -r "$SOURCE_DIR/$dir" "$PLUGIN_DIR/"
     fi

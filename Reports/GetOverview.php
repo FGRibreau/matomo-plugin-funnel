@@ -5,6 +5,7 @@ namespace Piwik\Plugins\FunnelInsights\Reports;
 use Piwik\Piwik;
 use Piwik\Plugin\Report;
 use Piwik\Plugin\ViewDataTable;
+use Piwik\Plugins\FunnelInsights\Columns\FunnelName;
 
 class GetOverview extends Report
 {
@@ -15,6 +16,7 @@ class GetOverview extends Report
         $this->name = Piwik::translate('FunnelInsights_Overview');
         $this->action = 'getOverview';
         $this->order = 1;
+        $this->dimension = new FunnelName();
     }
 
     public function configureView(ViewDataTable $view)
