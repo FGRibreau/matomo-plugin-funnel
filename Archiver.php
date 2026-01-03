@@ -33,6 +33,8 @@ class Archiver extends AbstractArchiver
         $aggregatedStats = array();
         foreach ($funnels as $funnel) {
             if (!$funnel['active']) continue;
+            // Always initialize the funnel key, even if no steps
+            $aggregatedStats[$funnel['idfunnel']] = array();
             $steps = isset($funnel['steps']) ? $funnel['steps'] : array();
             foreach ($steps as $index => $step) {
                 $aggregatedStats[$funnel['idfunnel']][$index] = array(
@@ -159,12 +161,13 @@ class Archiver extends AbstractArchiver
         // Finalize: Save Blobs
         foreach ($funnels as $funnel) {
             if (!$funnel['active']) continue;
-            
-            $finalStats = $aggregatedStats[$funnel['idfunnel']];
+
+            $funnelId = $funnel['idfunnel'];
+            $finalStats = isset($aggregatedStats[$funnelId]) ? $aggregatedStats[$funnelId] : array();
             $dataTable = new DataTable();
             $dataTable->addRowsFromSimpleArray($finalStats);
-            
-            $this->getProcessor()->insertBlobRecord('FunnelInsights_Funnel_' . $funnel['idfunnel'], $dataTable->getSerialized());
+
+            $this->getProcessor()->insertBlobRecord('FunnelInsights_Funnel_' . $funnelId, $dataTable->getSerialized());
         }
     }
 
