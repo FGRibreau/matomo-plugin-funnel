@@ -28,9 +28,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      # Mount plugin source directly
-      - ./:/var/www/html/plugins/FunnelInsights:ro
-      # Shared volume for init script to copy files
+      # Shared volume for init script to copy files (NO direct plugin mount - causes chown errors)
       - matomo-data:/var/www/html
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost/index.php"]
