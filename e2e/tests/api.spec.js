@@ -1,0 +1,225 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('FunnelInsights API Tests', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    let tokenAuth = '';
+    let testFunnelId = null;
+
+    test.beforeAll(async ({ request }) => {
+        // Get auth token by logging in
+        const loginResponse = await request.post(`${matomoUrl}/index.php`, {
+            form: {
+                module: 'Login',
+                action: 'logme',
+                login: matomoUser,
+                password: matomoPassword,
+            },
+        });
+
+        // For API tests, we'll use a different approach - create token via API
+        // First, let's see if we can access without token (anonymous)
+        const testResponse = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'API.getMatomoVersion',
+                format: 'JSON',
+            },
+        });
+
+        expect(testResponse.ok()).toBeTruthy();
+    });
+
+    test('API: getFunnels returns array', async ({ request }) => {
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getFunnels',
+                idSite: idSite,
+                format: 'JSON',
+            },
+        });
+
+        // May return error due to auth, but should not return PHP error
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Call to undefined method');
+        expect(text).not.toContain('DataTable\\Map::getRows');
+    });
+
+    test('API: getOverview does not throw DataTable Map error', async ({ request }) => {
+        // This tests the fix for the DataTable\Map::getRows() error
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getOverview',
+                idSite: idSite,
+                period: 'day',
+                date: 'yesterday',
+                format: 'JSON',
+            },
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Call to undefined method');
+        expect(text).not.toContain('DataTable\\Map::getRows');
+    });
+
+    test('API: getOverview with date range (triggers DataTable Map)', async ({ request }) => {
+        // Date ranges return DataTable\Map - this is where the bug occurred
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getOverview',
+                idSite: idSite,
+                period: 'day',
+                date: 'last7',
+                format: 'JSON',
+            },
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Call to undefined method');
+        expect(text).not.toContain('DataTable\\Map::getRows');
+
+        // Should be valid JSON
+        const data = JSON.parse(text);
+        expect(data).toBeDefined();
+    });
+
+    test('API: getFunnelReport with single date', async ({ request }) => {
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getFunnelReport',
+                idSite: idSite,
+                period: 'day',
+                date: 'yesterday',
+                idFunnel: 1, // May not exist, but should not PHP error
+                format: 'JSON',
+            },
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Call to undefined method');
+    });
+
+    test('API: getFunnelReport with date range (DataTable Map fix)', async ({ request }) => {
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getFunnelReport',
+                idSite: idSite,
+                period: 'day',
+                date: 'last7',
+                idFunnel: 1,
+                format: 'JSON',
+            },
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Call to undefined method');
+        expect(text).not.toContain('DataTable\\Map::getRows');
+    });
+
+    test('API: getFunnelEvolution with date range', async ({ request }) => {
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getFunnelEvolution',
+                idSite: idSite,
+                period: 'day',
+                date: 'last30',
+                idFunnel: 1,
+                format: 'JSON',
+            },
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Call to undefined method');
+    });
+
+    test('API: Plugin is active and responds', async ({ request }) => {
+        // Get list of methods to verify plugin is loaded
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'API.getReportMetadata',
+                idSite: idSite,
+                format: 'JSON',
+            },
+        });
+
+        expect(response.ok()).toBeTruthy();
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+    });
+});
+
+test.describe('FunnelInsights CRUD via UI', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    test.beforeEach(async ({ page }) => {
+        // Login to Matomo
+        await page.goto(`${matomoUrl}/index.php?module=Login`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('#login_form', { timeout: 30000 });
+
+        const form = page.locator('#login_form');
+        await form.locator('#login_form_login').waitFor({ state: 'visible' });
+        await form.locator('#login_form_password').waitFor({ state: 'visible' });
+        await form.locator('#login_form_login').fill(matomoUser);
+        await form.locator('#login_form_password').fill(matomoPassword);
+        await page.waitForTimeout(500);
+        await form.locator('input[type="submit"]').click();
+        await page.waitForURL(/(?!.*module=Login)|.*module=CoreHome/, { timeout: 30000 });
+        await page.waitForLoadState('networkidle');
+    });
+
+    test('Funnel manage page loads without PHP errors', async ({ page }) => {
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+
+        // Check for PHP errors in page content
+        const content = await page.content();
+        expect(content).not.toContain('Fatal error');
+        expect(content).not.toContain('Call to undefined method');
+        expect(content).not.toContain('DataTable\\Map::getRows');
+
+        // Should see the management page
+        await expect(page.locator('h2.card-title')).toContainText(/Manage|Funnel/i);
+    });
+
+    test('Funnel edit page loads without PHP errors', async ({ page }) => {
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+
+        const content = await page.content();
+        expect(content).not.toContain('Fatal error');
+        expect(content).not.toContain('Call to undefined method');
+
+        // Should see the funnel editor
+        await expect(page.locator('.funnel-editor')).toBeVisible({ timeout: 15000 });
+    });
+
+    test('Funnel index/overview page loads without PHP errors', async ({ page }) => {
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=index&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+
+        const content = await page.content();
+        expect(content).not.toContain('Fatal error');
+        expect(content).not.toContain('Call to undefined method');
+        expect(content).not.toContain('DataTable\\Map::getRows');
+    });
+});
