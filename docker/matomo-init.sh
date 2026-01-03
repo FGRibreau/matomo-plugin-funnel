@@ -23,12 +23,15 @@ done
 # Copy plugin.json
 cp "$SOURCE_DIR/plugin.json" "$PLUGIN_DIR/"
 
-# Copy directories
-for dir in lang templates javascripts vue DAO Model Columns Commands Tasks Reports; do
+# Copy directories (Tasks is now a single file, not a directory)
+for dir in lang templates javascripts vue DAO Model Columns Commands Reports; do
     if [ -d "$SOURCE_DIR/$dir" ]; then
         cp -r "$SOURCE_DIR/$dir" "$PLUGIN_DIR/"
     fi
 done
+
+# Remove old Tasks directory if it exists (migrated to Tasks.php file)
+rm -rf "$PLUGIN_DIR/Tasks" 2>/dev/null || true
 
 # Set correct permissions
 chown -R www-data:www-data "$PLUGIN_DIR"
