@@ -16,14 +16,11 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '7.4'
+          php-version: '8.1'
           extensions: mbstring, intl, pdo_mysql
 
       - name: Install Dependencies
-        run: |
-          composer --version
-          php --version
-          composer install --prefer-dist --no-progress -vvv || (cat /home/runner/.composer/composer.log 2>/dev/null; exit 1)
+        run: composer update --prefer-dist --no-progress
 
       - name: Run Unit Tests
         run: vendor/bin/phpunit tests/Unit/PluginVersionTest.php tests/Unit/Vue3CompatibilityTest.php
