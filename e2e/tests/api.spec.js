@@ -119,6 +119,119 @@ test.describe('FunnelInsights API Tests', () => {
         const text = await response.text();
         expect(text).not.toContain('Fatal error');
         expect(text).not.toContain('Call to undefined method');
+        expect(text).not.toContain('getDataTables');
+    });
+
+    // Non-regression tests for DataTable\Map bug (v3.0.23 fix)
+    test('API: getFunnelEvolution with single date returns valid response', async ({ request }) => {
+        // This was the main bug - single date should return Map, not DataTable
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getFunnelEvolution',
+                idSite: idSite,
+                period: 'day',
+                date: 'yesterday',
+                idFunnel: 1,
+                format: 'JSON',
+            },
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Call to undefined method');
+        expect(text).not.toContain('getDataTables');
+        expect(text).not.toContain('DataTable::getDataTables');
+        expect(() => JSON.parse(text)).not.toThrow();
+    });
+
+    test('API: getFunnelEvolution with today date', async ({ request }) => {
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getFunnelEvolution',
+                idSite: idSite,
+                period: 'day',
+                date: 'today',
+                idFunnel: 1,
+                format: 'JSON',
+            },
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('getDataTables');
+    });
+
+    test('API: getFunnelEvolution with week period', async ({ request }) => {
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getFunnelEvolution',
+                idSite: idSite,
+                period: 'week',
+                date: 'last4',
+                idFunnel: 1,
+                format: 'JSON',
+            },
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('getDataTables');
+    });
+
+    test('API: getFunnelEvolution with month period', async ({ request }) => {
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getFunnelEvolution',
+                idSite: idSite,
+                period: 'month',
+                date: 'last3',
+                idFunnel: 1,
+                format: 'JSON',
+            },
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('getDataTables');
+    });
+
+    test('API: getOverview with week period single date', async ({ request }) => {
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getOverview',
+                idSite: idSite,
+                period: 'week',
+                date: 'today',
+                format: 'JSON',
+            },
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Call to undefined method');
+    });
+
+    test('API: getOverview with month period', async ({ request }) => {
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getOverview',
+                idSite: idSite,
+                period: 'month',
+                date: 'last3',
+                format: 'JSON',
+            },
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Call to undefined method');
+        expect(text).not.toContain('getDataTables');
     });
 
     test('API: Plugin responds without PHP syntax errors', async ({ request }) => {
