@@ -164,6 +164,14 @@ class Archiver extends AbstractArchiver
 
             $funnelId = $funnel['idfunnel'];
             $finalStats = isset($aggregatedStats[$funnelId]) ? $aggregatedStats[$funnelId] : array();
+
+            // Serialize dropoff_urls array to JSON to avoid "Multidimensional column values not supported" error
+            foreach ($finalStats as $stepIdx => $stepData) {
+                if (isset($stepData['dropoff_urls']) && is_array($stepData['dropoff_urls'])) {
+                    $finalStats[$stepIdx]['dropoff_urls'] = json_encode($stepData['dropoff_urls']);
+                }
+            }
+
             $dataTable = new DataTable();
             $dataTable->addRowsFromSimpleArray($finalStats);
 

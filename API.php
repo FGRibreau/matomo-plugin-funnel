@@ -127,15 +127,23 @@ class API extends \Piwik\Plugin\API
                      $row['avg_time_on_step_raw'] = 0;
                  }
                  
-                 // Process Drop-offs
-                 if (isset($row['dropoff_urls']) && is_array($row['dropoff_urls'])) {
-                     arsort($row['dropoff_urls']); // Sort desc by count
-                     $row['top_dropoffs'] = array_slice($row['dropoff_urls'], 0, 5, true);
-                     // Clean up raw full list from output if too large? 
-                     // For API it might be fine, but for UI we might want just top 5.
-                     // Let's keep raw but maybe truncated in a real scenario.
+                 // Process Drop-offs (stored as JSON string in archive, decode if needed)
+                 $dropoffUrls = array();
+                 if (isset($row['dropoff_urls'])) {
+                     if (is_string($row['dropoff_urls'])) {
+                         $decoded = json_decode($row['dropoff_urls'], true);
+                         $dropoffUrls = is_array($decoded) ? $decoded : array();
+                     } elseif (is_array($row['dropoff_urls'])) {
+                         $dropoffUrls = $row['dropoff_urls'];
+                     }
+                 }
+                 if (!empty($dropoffUrls)) {
+                     arsort($dropoffUrls); // Sort desc by count
+                     $row['top_dropoffs'] = array_slice($dropoffUrls, 0, 5, true);
+                     $row['dropoff_urls'] = $dropoffUrls;
                  } else {
                      $row['top_dropoffs'] = array();
+                     $row['dropoff_urls'] = array();
                  }
             }
         }
