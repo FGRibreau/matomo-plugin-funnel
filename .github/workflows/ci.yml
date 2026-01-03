@@ -20,7 +20,10 @@ jobs:
           extensions: mbstring, intl, pdo_mysql
 
       - name: Install Dependencies
-        run: composer install --prefer-dist --no-progress
+        run: |
+          composer --version
+          php --version
+          composer install --prefer-dist --no-progress -vvv || (cat /home/runner/.composer/composer.log 2>/dev/null; exit 1)
 
       - name: Run Unit Tests
         run: vendor/bin/phpunit tests/Unit/PluginVersionTest.php tests/Unit/Vue3CompatibilityTest.php
@@ -47,7 +50,8 @@ jobs:
 
       - name: Start Matomo Stack
         run: |
-          docker compose -f docker-compose.e2e.yml up -d
+          docker compose version
+          docker compose -f docker-compose.e2e.yml up -d --wait || (docker compose -f docker-compose.e2e.yml logs; exit 1)
           echo "Waiting for Matomo to be ready..."
 
       - name: Wait for Matomo and init to complete
