@@ -15,6 +15,7 @@ parameters:
         - DAO
         - Model
         - Reports
+        - Widgets
     excludePaths:
         - .matomo
         - vendor

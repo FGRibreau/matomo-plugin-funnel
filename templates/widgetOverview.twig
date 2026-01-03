@@ -1,0 +1,61 @@
+{% import '@CoreHome/_dataTableActions.twig' as dataTableActions %}
+
+<div class="funnelOverviewWidget">
+    <div class="reportsByDimensionView"
+         vue-entry="FunnelInsights.FunnelOverviewWidget">
+    </div>
+</div>
+
+<script>
+(function() {
+    // Fallback for non-Vue rendering - fetch and display funnel overview
+    var container = document.querySelector('.funnelOverviewWidget');
+    if (!container) return;
+
+    var params = {
+        module: 'API',
+        method: 'FunnelInsights.getOverview',
+        idSite: piwik.idSite,
+        period: piwik.period,
+        date: piwik.currentDateString,
+        format: 'JSON'
+    };
+
+    var url = 'index.php?' + Object.keys(params).map(function(k) {
+        return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+    }).join('&');
+
+    fetch(url)
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data && data.length > 0) {
+                var html = '<div class="card"><div class="card-content">';
+                html += '<h3 class="card-title">{{ "FunnelInsights_ActiveFunnels"|translate }}</h3>';
+                html += '<table class="dataTable entityTable"><thead><tr>';
+                html += '<th>{{ "General_Name"|translate }}</th>';
+                html += '<th>{{ "FunnelInsights_Entries"|translate }}</th>';
+                html += '<th>{{ "FunnelInsights_Conversions"|translate }}</th>';
+                html += '<th>{{ "FunnelInsights_ConversionRate"|translate }}</th>';
+                html += '</tr></thead><tbody>';
+
+                data.forEach(function(row) {
+                    var viewUrl = 'index.php?module=FunnelInsights&action=viewFunnel&idSite=' + piwik.idSite + '&idFunnel=' + row.idfunnel + '&period=' + piwik.period + '&date=' + piwik.currentDateString;
+                    html += '<tr>';
+                    html += '<td><a href="' + viewUrl + '">' + (row.label || 'Funnel') + '</a></td>';
+                    html += '<td>' + (row.entries || 0) + '</td>';
+                    html += '<td>' + (row.conversions || 0) + '</td>';
+                    html += '<td>' + (row.conversion_rate || '0%') + '</td>';
+                    html += '</tr>';
+                });
+
+                html += '</tbody></table></div></div>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<div class="notification system notification-info">{{ "FunnelInsights_NoActiveFunnels"|translate }}</div>';
+            }
+        })
+        .catch(function(err) {
+            container.innerHTML = '<div class="notification system notification-warning">{{ "General_Error"|translate }}: ' + err.message + '</div>';
+        });
+})();
+</script>

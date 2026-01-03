@@ -55,6 +55,10 @@
         "BackToFunnels": "Back to Funnels",
         "AssociatedGoal": "Associated Goal",
         "SelectFunnelToView": "Select a funnel to view detailed analytics.",
-        "NoActiveFunnels": "No active funnels found. Create your first funnel to start tracking conversion paths."
+        "NoActiveFunnels": "No active funnels found. Create your first funnel to start tracking conversion paths.",
+        "ActiveFunnels": "Active Funnels",
+        "Conversions": "Conversions",
+        "ViewFunnel": "View Funnel",
+        "FunnelReport": "Funnel Report"
     }
 }
