@@ -17,6 +17,23 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
+          tools: composer:v2
+
+      - name: Cache Matomo
+        uses: actions/cache@v4
+        with:
+          path: .matomo
+          key: matomo-5.x-dev-${{ hashFiles('scripts/setup-matomo.sh') }}
+          restore-keys: |
+            matomo-5.x-dev-
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock', 'composer.json') }}
+          restore-keys: |
+            composer-
 
       - name: Run Static Analysis
         run: ./scripts/run-static-analysis.sh

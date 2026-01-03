@@ -25,28 +25,24 @@ class API extends \Piwik\Plugin\API
      * @param DataTable|Map|null $result
      * @return DataTable|null
      */
-    private function extractDataTable($result)
+    private function extractDataTable($result): ?DataTable
     {
         if ($result === null) {
             return null;
         }
 
-        // If it's already a plain DataTable, return it
-        if ($result instanceof DataTable && !($result instanceof Map)) {
-            return $result;
-        }
-
-        // If it's a Map (date range), get the merged/last table
+        // If it's a Map (date range), get the last table in the range (most recent)
+        // Note: Map implements DataTableInterface but does NOT extend DataTable
         if ($result instanceof Map) {
             $tables = $result->getDataTables();
             if (empty($tables)) {
                 return null;
             }
-            // Return the last table in the range (most recent)
             return end($tables);
         }
 
-        return null;
+        // If it's a plain DataTable, return it directly (must be DataTable at this point)
+        return $result;
     }
 
     public function createFunnel($idSite, $name, $steps, $goalId = null, $active = 0, $strictMode = 0, $stepTimeLimit = 0)

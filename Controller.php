@@ -67,7 +67,7 @@ class Controller extends ControllerAdmin
             $funnel = API::getInstance()->getFunnel($this->idSite, $idFunnel);
         }
 
-        $goals = \Piwik\Plugins\Goals\API::getInstance()->getGoals($this->idSite);
+        $goals = \Piwik\Plugins\Goals\API::getInstance()->getGoals((string)$this->idSite);
 
         return $this->renderTemplate('@FunnelInsights/edit', [
             'funnel' => $funnel,
