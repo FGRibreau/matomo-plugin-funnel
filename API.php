@@ -278,12 +278,7 @@ class API extends \Piwik\Plugin\API
         $resultTable = new \Piwik\DataTable();
         $resultTable->addRowsFromSimpleArray($reportData);
 
-        // RowEvolution always expects a DataTable\Map (one table per period).
-        // Wrap in Map to maintain API compatibility.
-        $map = new Map();
-        $map->setKeyName('date');
-        $map->addTable($resultTable, $date);
-        return $map;
+        return $resultTable;
     }
 
     /**
