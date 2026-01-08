@@ -75,12 +75,14 @@ class Archiver extends AbstractArchiver
             }
             
             $placeholders = implode(',', array_fill(0, count($visitIds), '?'));
+            // Site search terms are stored in log_action (type=8), linked via idaction_name
+            // We detect site search by checking if the URL action type is TYPE_SITE_SEARCH (8)
             $sqlActions = "
                 SELECT
                     l.idvisit, l.server_time,
                     a_url.name AS url,
                     a_name.name AS pageTitle,
-                    l.search_term,
+                    CASE WHEN a_url.type = 8 THEN a_name.name ELSE NULL END AS search_term,
                     a_cat.name AS eventCategory,
                     a_act.name AS eventAction,
                     a_evtname.name AS eventName
