@@ -1017,17 +1017,106 @@ test.describe('FunnelInsights API - Row Evolution Widget Rendering', () => {
     });
 
     /**
-     * CRITICAL: Row Evolution tests
+     * CRITICAL: Row Evolution tests - Non-regression for these errors:
      *
-     * Error: "Call to a member function getDateStart() on bool"
-     * This occurs when:
-     * 1. Row Evolution is opened on getOverview
-     * 2. Matomo calls the API with date range (last30)
-     * 3. The returned Map is missing period metadata on DataTables
-     * 4. Period::factory() returns false, getDateStart() is called on false
+     * 1. "Call to a member function getDateStart() on bool"
+     *    - Cause: Period metadata missing from custom DataTables
+     *    - Fix: Copy metadata using getAllTableMetadata()
      *
-     * The fix: Copy period metadata from archive templates to our custom Map/DataTables
+     * 2. "Call to undefined method Piwik\DataTable\Map::getMetadata()"
+     *    - Cause: Map does NOT have getMetadata(), only DataTable does
+     *    - Fix: Don't call getMetadata() on Map
+     *
+     * 3. "Too few arguments to function Piwik\DataTable::getMetadata()"
+     *    - Cause: getMetadata($key) requires 1 argument
+     *    - Fix: Use getAllTableMetadata() to get all metadata
+     *
+     * Test URLs that must work:
+     * - Overview page: /index.php?module=CoreHome&action=index&...&category=FunnelInsights_Funnels&subcategory=FunnelInsights_Overview
+     * - Row Evolution: same URL with popover=RowAction$3ARowEvolution$3AFunnelInsights.getOverview...
      */
+
+    // === NON-REGRESSION TESTS FOR PRODUCTION URLs ===
+
+    // Test 1: Overview page must load without PHP errors
+    // URL: /index.php?module=CoreHome&action=index&idSite=1&period=day&date=yesterday#?...&category=FunnelInsights_Funnels&subcategory=FunnelInsights_Overview
+    test('URL: Overview page loads without PHP errors', async ({ request }) => {
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'CoreHome',
+                action: 'index',
+                idSite: idSite,
+                period: 'day',
+                date: 'yesterday',
+            },
+            headers: authHeaders(),
+        });
+
+        const text = await response.text();
+        // Must not contain PHP errors
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Too few arguments');
+        expect(text).not.toContain('getAllTableMetadata');
+        expect(text).not.toContain('getMetadata()');
+        expect(text).not.toContain('Call to undefined method');
+        expect(text).not.toContain('Call to a member function');
+        expect(text).not.toContain('on bool');
+    });
+
+    // Test 2: Row Evolution popover must load without PHP errors
+    // URL: ...&popover=RowAction$3ARowEvolution$3AFunnelInsights.getOverview...
+    test('URL: Row Evolution popover loads without PHP errors', async ({ request }) => {
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'CoreHome',
+                action: 'getRowEvolutionPopover',
+                idSite: idSite,
+                period: 'day',
+                date: 'yesterday',
+                apiMethod: 'FunnelInsights.getOverview',
+                label: 'Demande de Démo',
+            },
+            headers: authHeaders(),
+        });
+
+        const text = await response.text();
+        // Must not contain PHP errors
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Too few arguments');
+        expect(text).not.toContain('getAllTableMetadata');
+        expect(text).not.toContain('getMetadata()');
+        expect(text).not.toContain('Call to undefined method');
+        expect(text).not.toContain('Call to a member function');
+        expect(text).not.toContain('on bool');
+        expect(text).not.toContain('getDateStart()');
+        // Should contain some HTML content (the popover renders HTML)
+        expect(response.status()).toBeLessThan(500);
+    });
+
+    // Test 3: FunnelInsights Overview widget renders without errors
+    test('URL: FunnelInsights Overview widget renders without errors', async ({ request }) => {
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'Widgetize',
+                action: 'iframe',
+                moduleToWidgetize: 'FunnelInsights',
+                actionToWidgetize: 'widgetOverview',
+                idSite: idSite,
+                period: 'day',
+                date: 'yesterday',
+            },
+            headers: authHeaders(),
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Too few arguments');
+        expect(text).not.toContain('Call to undefined method');
+        expect(text).not.toContain('Call to a member function');
+        expect(response.status()).toBeLessThan(500);
+    });
+
+    // === API ENDPOINT TESTS ===
 
     // Test the Row Evolution API endpoint directly
     test('API: Row Evolution on getOverview with last30 does not crash', async ({ request }) => {
