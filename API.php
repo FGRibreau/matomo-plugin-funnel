@@ -273,8 +273,9 @@ class API extends \Piwik\Plugin\API
 
             // CRITICAL: Copy period metadata from template table
             // Row Evolution uses this to call Period::factory() and getDateStart()
+            // NOTE: getMetadata($key) requires 1 arg, use getAllTableMetadata() for all
             if ($templateTable instanceof DataTable) {
-                foreach ($templateTable->getMetadata() as $metaKey => $metaValue) {
+                foreach ($templateTable->getAllTableMetadata() as $metaKey => $metaValue) {
                     $summaryTable->setMetadata($metaKey, $metaValue);
                 }
             }
