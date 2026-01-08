@@ -425,7 +425,7 @@ test.describe('FunnelInsights Controller - Form Validation', () => {
     });
 });
 
-test.describe('FunnelInsights Controller - viewFunnel Design Regression (v3.0.39)', () => {
+test.describe('FunnelInsights Controller - viewFunnel Dashboard Layout (v3.0.42)', () => {
     const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
     const matomoUser = process.env.MATOMO_USER || 'admin';
     const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
@@ -435,8 +435,8 @@ test.describe('FunnelInsights Controller - viewFunnel Design Regression (v3.0.39
         await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
     });
 
-    // Helper to get first available funnel ID from the manage page
-    async function getFirstFunnelId(page) {
+    // Helper to get first available funnel ID or create one if none exist
+    async function getOrCreateFunnelId(page) {
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
 
@@ -444,14 +444,17 @@ test.describe('FunnelInsights Controller - viewFunnel Design Regression (v3.0.39
         if (await editLink.count() > 0) {
             const href = await editLink.getAttribute('href');
             const match = href.match(/idFunnel=(\d+)/);
-            return match ? match[1] : null;
+            if (match) return match[1];
         }
-        return null;
+
+        // No funnel exists, create one
+        const testName = `E2E Layout Test ${Date.now()}`;
+        const created = await createTestFunnel(page, matomoUrl, idSite, testName);
+        return created ? String(created) : null;
     }
 
-    test('viewFunnel: has admin layout wrapper with sidebar menu', async ({ page }) => {
-        // Get an existing funnel to test with
-        const idFunnel = await getFirstFunnelId(page);
+    test('viewFunnel: has dashboard layout with period selector', async ({ page }) => {
+        const idFunnel = await getOrCreateFunnelId(page);
         expect(idFunnel).toBeTruthy();
 
         // TEST: View the funnel page
@@ -462,23 +465,35 @@ test.describe('FunnelInsights Controller - viewFunnel Design Regression (v3.0.39
         expect(content).not.toContain('Fatal error');
         expect(content).not.toContain('Parse error');
 
-        // Verify admin layout wrapper is present (these are elements from admin.twig)
-        // The page should have the admin sidebar/menu structure
-        await expect(page.locator('#root')).toBeAttached({ timeout: 10000 });
+        // Verify dashboard layout is present (extends dashboard.twig)
+        await expect(page.locator('.page, .pageWrap')).toBeAttached({ timeout: 10000 });
 
-        // Verify admin sidebar navigation is present (from extends admin.twig)
-        const adminMenu = page.locator('nav, .menu, #menu, [class*="menu"]').first();
-        await expect(adminMenu).toBeAttached({ timeout: 5000 });
+        // Verify period selector is present (from topcontrols block)
+        const periodSelector = page.locator('#periodString, [data-test="period-selector"], .piwikTopControl');
+        await expect(periodSelector.first()).toBeAttached({ timeout: 10000 });
 
-        // The card content should be properly styled within admin layout
+        // The card content should be properly styled within dashboard layout
         await expect(page.locator('.card').first()).toBeVisible({ timeout: 10000 });
 
         // Check that the funnel name appears in the styled layout
         await expect(page.locator('.card-title').first()).toBeVisible();
     });
 
+    test('viewFunnel: period selector allows date changes', async ({ page }) => {
+        const idFunnel = await getOrCreateFunnelId(page);
+        expect(idFunnel).toBeTruthy();
+
+        // Navigate to viewFunnel
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=viewFunnel&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        // Verify period selector exists and is clickable
+        const periodSelector = page.locator('#periodString');
+        await expect(periodSelector).toBeVisible({ timeout: 10000 });
+    });
+
     test('viewFunnel: stats boxes are visible and styled', async ({ page }) => {
-        const idFunnel = await getFirstFunnelId(page);
+        const idFunnel = await getOrCreateFunnelId(page);
         expect(idFunnel).toBeTruthy();
 
         // TEST
@@ -495,7 +510,7 @@ test.describe('FunnelInsights Controller - viewFunnel Design Regression (v3.0.39
     });
 
     test('viewFunnel: back and edit buttons are visible', async ({ page }) => {
-        const idFunnel = await getFirstFunnelId(page);
+        const idFunnel = await getOrCreateFunnelId(page);
         expect(idFunnel).toBeTruthy();
 
         // TEST
@@ -517,7 +532,7 @@ test.describe('FunnelInsights Controller - viewFunnel Design Regression (v3.0.39
     });
 
     test('viewFunnel: funnel steps section is displayed', async ({ page }) => {
-        const idFunnel = await getFirstFunnelId(page);
+        const idFunnel = await getOrCreateFunnelId(page);
         expect(idFunnel).toBeTruthy();
 
         // TEST
