@@ -6,6 +6,7 @@ use Piwik\Common;
 use Piwik\Nonce;
 use Piwik\Plugin\ControllerAdmin;
 use Piwik\Piwik;
+use Piwik\View;
 
 class Controller extends ControllerAdmin
 {
@@ -47,10 +48,15 @@ class Controller extends ControllerAdmin
         // Transform flat array into structured report for template
         $funnelReport = $this->buildFunnelReportForTemplate($rawSteps);
 
-        return $this->renderTemplate('@FunnelInsights/viewFunnel', [
-            'funnel' => $funnel,
-            'funnelReport' => $funnelReport,
-        ]);
+        // Use View directly to ensure setGeneralVariablesView is called for dashboard template
+        $view = new View('@FunnelInsights/viewFunnel');
+        $this->setBasicVariablesView($view);
+        $this->setGeneralVariablesView($view);
+
+        $view->funnel = $funnel;
+        $view->funnelReport = $funnelReport;
+
+        return $view->render();
     }
 
     /**
