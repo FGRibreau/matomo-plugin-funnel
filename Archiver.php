@@ -26,7 +26,8 @@ class Archiver extends AbstractArchiver
 
         $matcher = new StepMatcher();
         $dateStart = $period->getDateStart()->getDatetime();
-        $dateEnd = $period->getDateEnd()->getDatetime();
+        // getDatetime() may return empty for end date, use end of day explicitly
+        $dateEnd = $period->getDateEnd()->toString('Y-m-d') . ' 23:59:59';
         $segment = $this->getProcessor()->getParams()->getSegment();
 
         // Initialize Aggregated Stats for all funnels
