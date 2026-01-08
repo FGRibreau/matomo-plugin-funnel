@@ -42,35 +42,163 @@
         <h3 class="card-title">{{ 'FunnelInsights_Steps'|translate }}</h3>
 
         {% if funnelReport.steps is defined and funnelReport.steps|length > 0 %}
-            <div class="funnel-visualization">
+            <style>
+                .funnel-container {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    padding: 20px 0;
+                    max-width: 800px;
+                    margin: 0 auto;
+                }
+                .funnel-step-wrapper {
+                    display: flex;
+                    align-items: center;
+                    width: 100%;
+                    gap: 24px;
+                }
+                .funnel-step-left {
+                    width: 200px;
+                    text-align: right;
+                    flex-shrink: 0;
+                }
+                .funnel-step-center {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+                .funnel-step-right {
+                    width: 200px;
+                    text-align: left;
+                    flex-shrink: 0;
+                }
+                .funnel-bar {
+                    height: 50px;
+                    background: linear-gradient(180deg, #2196f3 0%, #1976d2 100%);
+                    border-radius: 4px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: bold;
+                    font-size: 18px;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+                }
+                .funnel-bar:hover {
+                    transform: scale(1.02);
+                    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+                }
+                .funnel-connector {
+                    width: 0;
+                    height: 0;
+                    border-style: solid;
+                    margin: -1px 0;
+                }
+                .step-label {
+                    font-weight: 600;
+                    color: #333;
+                    font-size: 14px;
+                    margin-bottom: 4px;
+                }
+                .step-number-badge {
+                    display: inline-block;
+                    width: 24px;
+                    height: 24px;
+                    background: #2196f3;
+                    color: white;
+                    border-radius: 50%;
+                    text-align: center;
+                    line-height: 24px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    margin-right: 8px;
+                }
+                .step-visits {
+                    font-size: 13px;
+                    color: #666;
+                }
+                .step-drop-off {
+                    font-size: 12px;
+                    color: #f44336;
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                }
+                .step-rate {
+                    font-size: 12px;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                }
+                .rate-good { color: #4caf50; }
+                .rate-warning { color: #ff9800; }
+                .rate-bad { color: #f44336; }
+                .arrow-down {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    padding: 8px 0;
+                }
+                .arrow-down .rate-text {
+                    font-size: 13px;
+                    font-weight: 600;
+                    margin-bottom: 4px;
+                }
+                .arrow-down svg {
+                    width: 24px;
+                    height: 24px;
+                }
+            </style>
+
+            <div class="funnel-container" data-test="funnel-visualization">
                 {% for step in funnelReport.steps %}
-                <div class="funnel-step" style="margin-bottom: 16px; display: flex; align-items: center; gap: 16px;">
-                    <div class="step-number" style="width: 32px; height: 32px; background: #2196f3; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
-                        {{ loop.index }}
-                    </div>
-                    <div class="step-content" style="flex: 1;">
-                        <div class="step-name" style="font-weight: 600; margin-bottom: 4px;">{{ step.name|default(step.step_name|default('Step ' ~ loop.index)) }}</div>
-                        <div class="step-metrics" style="display: flex; gap: 24px; font-size: 13px; color: #666;">
-                            <span><strong>{{ step.nb_visits|default(0)|number_format }}</strong> {{ 'FunnelInsights_Visits'|translate }}</span>
-                            {% if step.rate is defined %}
-                            <span style="color: {% if step.rate >= 50 %}#4caf50{% else %}#ff9800{% endif %};">
-                                {{ step.rate|number_format(1) }}% {{ 'FunnelInsights_Proceeded'|translate }}
-                            </span>
-                            {% endif %}
+                    {% set barWidth = step.fill_rate|default(100) %}
+                    {% set nextBarWidth = loop.last ? barWidth : (funnelReport.steps[loop.index0 + 1].fill_rate|default(50)) %}
+
+                    <div class="funnel-step-wrapper" data-test="funnel-step-{{ loop.index }}">
+                        <div class="funnel-step-left">
+                            <div class="step-label">
+                                <span class="step-number-badge">{{ loop.index }}</span>
+                                {{ step.name|default(step.step_name|default('Step ' ~ loop.index)) }}
+                            </div>
+                            <div class="step-visits">
+                                {{ step.nb_visits|default(0)|number_format }} {{ 'FunnelInsights_Visits'|translate }}
+                            </div>
+                        </div>
+
+                        <div class="funnel-step-center">
+                            <div class="funnel-bar" style="width: {{ barWidth }}%;">
+                                {{ step.nb_visits|default(0)|number_format }}
+                            </div>
+                        </div>
+
+                        <div class="funnel-step-right">
                             {% if step.nb_drop_off is defined and step.nb_drop_off > 0 %}
-                            <span style="color: #f44336;">
-                                -{{ step.nb_drop_off|number_format }} {{ 'FunnelInsights_DropOff'|translate }}
-                            </span>
+                                <div class="step-drop-off">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                                    </svg>
+                                    -{{ step.nb_drop_off|number_format }} {{ 'FunnelInsights_DropOff'|translate }}
+                                </div>
                             {% endif %}
                         </div>
-                        <div class="step-bar" style="margin-top: 8px; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
-                            <div style="height: 100%; width: {{ step.fill_rate|default(100) }}%; background: linear-gradient(90deg, #2196f3, #4caf50); border-radius: 4px;"></div>
-                        </div>
                     </div>
-                </div>
-                {% if not loop.last %}
-                <div class="step-connector" style="margin-left: 15px; height: 20px; border-left: 2px dashed #ccc;"></div>
-                {% endif %}
+
+                    {% if not loop.last %}
+                        <div class="arrow-down">
+                            {% if step.rate is defined %}
+                                <span class="rate-text {% if step.rate >= 70 %}rate-good{% elseif step.rate >= 40 %}rate-warning{% else %}rate-bad{% endif %}">
+                                    {{ step.rate|number_format(1) }}%
+                                </span>
+                            {% endif %}
+                            <svg viewBox="0 0 24 24" fill="#999">
+                                <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                            </svg>
+                        </div>
+                    {% endif %}
                 {% endfor %}
             </div>
         {% else %}

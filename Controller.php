@@ -52,6 +52,7 @@ class Controller extends ControllerAdmin
         $view = new View('@FunnelInsights/viewFunnel');
         $this->setBasicVariablesView($view);
         $this->setGeneralVariablesView($view);
+        $view->showMenu = true;
 
         $view->funnel = $funnel;
         $view->funnelReport = $funnelReport;
