@@ -1,9 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { createTestFunnel, deleteFunnel, loginToMatomo } from './helpers/funnel-helpers.js';
 
 /**
  * E2E Tests for FunnelInsights Controller Actions
  *
  * Tests all controller endpoints including page loads, form submissions, and AJAX endpoints.
+ *
+ * IMPORTANT: Tests are self-contained - they CREATE their own test data upfront.
+ * NEVER use conditional logic like `if (data.length > 0)`.
  */
 
 test.describe('FunnelInsights Controller - Unauthenticated Access', () => {
@@ -58,20 +62,7 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
     const idSite = process.env.MATOMO_IDSITE || '1';
 
     test.beforeEach(async ({ page }) => {
-        // Login to Matomo
-        await page.goto(`${matomoUrl}/index.php?module=Login`);
-        await page.waitForLoadState('networkidle');
-        await page.waitForSelector('#login_form', { timeout: 30000 });
-
-        const form = page.locator('#login_form');
-        await form.locator('#login_form_login').waitFor({ state: 'visible' });
-        await form.locator('#login_form_password').waitFor({ state: 'visible' });
-        await form.locator('#login_form_login').fill(matomoUser);
-        await form.locator('#login_form_password').fill(matomoPassword);
-        await page.waitForTimeout(500);
-        await form.locator('input[type="submit"]').click();
-        await page.waitForURL(/(?!.*module=Login)|.*module=CoreHome/, { timeout: 30000 });
-        await page.waitForLoadState('networkidle');
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
     });
 
     test('Controller: index action displays funnel list', async ({ page }) => {
@@ -87,47 +78,15 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
     });
 
     test('Controller: viewFunnel with valid funnel shows report', async ({ page }) => {
-        // First, need to create a funnel or check if one exists
-        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
-        await page.waitForLoadState('networkidle');
-
-        // Check if there's at least one funnel (exclude the "no-data" row)
-        const editLinks = page.locator('table.entityTable tbody tr a.icon-edit');
-        const hasFunnels = await editLinks.count() > 0;
-
-        let idFunnel;
-        if (hasFunnels) {
-            // Get the first funnel's ID from the edit link
-            const editLink = await editLinks.first().getAttribute('href');
-            const idFunnelMatch = editLink?.match(/idFunnel=(\d+)/);
-            if (idFunnelMatch) {
-                idFunnel = idFunnelMatch[1];
-            }
-        }
-
-        // If no funnel exists, create one first
-        if (!idFunnel) {
-            const testFunnelName = `Test Funnel ViewReport ${Date.now()}`;
-            await page.click('a.btn:has-text("Create")');
-            await page.waitForLoadState('networkidle');
-            await page.waitForSelector('.funnel-editor', { timeout: 15000 });
-            await page.fill('input#name', testFunnelName);
-            await page.click('.funnel-editor button:has-text("+ Add Step")');
-            await page.waitForSelector('.step-card');
-            await page.locator('.step-card').last().locator('input[placeholder="e.g. Landing Page"]').fill('Test Step');
-            await page.locator('.step-card').last().locator('input[placeholder="value to match"]').fill('/test');
-            await page.click('input[type="submit"].btn');
-            await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
-
-            // Get the newly created funnel ID
-            const newEditLink = await page.locator('table.entityTable tbody tr a.icon-edit').first().getAttribute('href');
-            const newIdFunnelMatch = newEditLink?.match(/idFunnel=(\d+)/);
-            expect(newIdFunnelMatch).toBeTruthy();
-            idFunnel = newIdFunnelMatch[1];
-        }
-
+        // SETUP: Create a test funnel specifically for this test
+        const testFunnelName = `E2E ViewReport Test ${Date.now()}`;
+        const idFunnel = await createTestFunnel(page, matomoUrl, idSite, testFunnelName, {
+            stepName: 'View Test Step',
+            pattern: '/view-test'
+        });
         expect(idFunnel).toBeTruthy();
 
+        // TEST: View the funnel report
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=viewFunnel&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
         await page.waitForLoadState('networkidle');
 
@@ -135,8 +94,11 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
         expect(content).not.toContain('Fatal error');
         expect(content).not.toContain('Parse error');
 
-        // Should display funnel details - wait with timeout
+        // Should display funnel details
         await expect(page.locator('.card').first()).toBeVisible({ timeout: 10000 });
+
+        // CLEANUP: Delete the test funnel
+        await deleteFunnel(page, matomoUrl, idSite, idFunnel);
     });
 
     test('Controller: viewFunnel with invalid idFunnel redirects', async ({ page }) => {
@@ -160,46 +122,15 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
     });
 
     test('Controller: edit action with existing funnel pre-fills form', async ({ page }) => {
-        // First get a funnel ID
-        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
-        await page.waitForLoadState('networkidle');
-
-        // Check if there's at least one funnel (exclude the "no-data" row)
-        const editLinks = page.locator('table.entityTable tbody tr a.icon-edit');
-        const hasFunnels = await editLinks.count() > 0;
-
-        let idFunnel;
-        if (hasFunnels) {
-            const editLink = await editLinks.first().getAttribute('href');
-            const idFunnelMatch = editLink?.match(/idFunnel=(\d+)/);
-            if (idFunnelMatch) {
-                idFunnel = idFunnelMatch[1];
-            }
-        }
-
-        // If no funnel exists, create one first
-        if (!idFunnel) {
-            const testFunnelName = `Test Funnel EditForm ${Date.now()}`;
-            await page.click('a.btn:has-text("Create")');
-            await page.waitForLoadState('networkidle');
-            await page.waitForSelector('.funnel-editor', { timeout: 15000 });
-            await page.fill('input#name', testFunnelName);
-            await page.click('.funnel-editor button:has-text("+ Add Step")');
-            await page.waitForSelector('.step-card');
-            await page.locator('.step-card').last().locator('input[placeholder="e.g. Landing Page"]').fill('Test Step');
-            await page.locator('.step-card').last().locator('input[placeholder="value to match"]').fill('/test');
-            await page.click('input[type="submit"].btn');
-            await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
-
-            // Get the newly created funnel ID
-            const newEditLink = await page.locator('table.entityTable tbody tr a.icon-edit').first().getAttribute('href');
-            const newIdFunnelMatch = newEditLink?.match(/idFunnel=(\d+)/);
-            expect(newIdFunnelMatch).toBeTruthy();
-            idFunnel = newIdFunnelMatch[1];
-        }
-
+        // SETUP: Create a test funnel specifically for this test
+        const testFunnelName = `E2E EditForm Test ${Date.now()}`;
+        const idFunnel = await createTestFunnel(page, matomoUrl, idSite, testFunnelName, {
+            stepName: 'Edit Test Step',
+            pattern: '/edit-test'
+        });
         expect(idFunnel).toBeTruthy();
 
+        // TEST: Edit the funnel and verify form is pre-filled
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}&idFunnel=${idFunnel}`);
         await page.waitForLoadState('networkidle');
         await page.waitForSelector('.funnel-editor', { timeout: 15000 });
@@ -211,6 +142,9 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
         const nameInput = page.locator('input#name');
         const nameValue = await nameInput.inputValue();
         expect(nameValue.length).toBeGreaterThan(0);
+
+        // CLEANUP: Delete the test funnel
+        await deleteFunnel(page, matomoUrl, idSite, idFunnel);
     });
 
     test('Controller: validateSteps AJAX endpoint works', async ({ page }) => {
@@ -325,7 +259,7 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
     });
 
     test('Controller: duplicate action creates copy', async ({ page }) => {
-        // First create a funnel to duplicate
+        // SETUP: Create a funnel to duplicate
         const originalName = `E2E Duplicate Source ${Date.now()}`;
 
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
@@ -343,7 +277,7 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
         await page.click('input[type="submit"].btn');
         await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
 
-        // Now duplicate it
+        // TEST: Duplicate it
         page.on('dialog', dialog => dialog.accept());
         const row = page.locator(`tr:has-text("${originalName}")`);
         await row.locator('a.icon-copy').click();
@@ -354,20 +288,18 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
         await expect(page.locator('table.entityTable')).toContainText(originalName);
         await expect(page.locator('table.entityTable')).toContainText(`${originalName} (Copy)`);
 
-        // Cleanup: delete both
+        // CLEANUP: Delete both
         const originalRow = page.locator(`tr:has-text("${originalName}")`).first();
         await originalRow.locator('a.icon-delete').click();
         await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
 
         const copyRow = page.locator(`tr:has-text("${originalName} (Copy)")`);
-        if (await copyRow.count() > 0) {
-            await copyRow.locator('a.icon-delete').click();
-            await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
-        }
+        await copyRow.locator('a.icon-delete').click();
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
     });
 
     test('Controller: delete action removes funnel', async ({ page }) => {
-        // Create a funnel to delete
+        // SETUP: Create a funnel to delete
         const deleteName = `E2E Delete Target ${Date.now()}`;
 
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
@@ -388,7 +320,7 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
         // Verify funnel exists
         await expect(page.locator('table.entityTable')).toContainText(deleteName);
 
-        // Delete the funnel
+        // TEST: Delete the funnel
         page.on('dialog', dialog => dialog.accept());
         const row = page.locator(`tr:has-text("${deleteName}")`);
         await row.locator('a.icon-delete').click();
@@ -407,17 +339,7 @@ test.describe('FunnelInsights Controller - Form Validation', () => {
     const idSite = process.env.MATOMO_IDSITE || '1';
 
     test.beforeEach(async ({ page }) => {
-        await page.goto(`${matomoUrl}/index.php?module=Login`);
-        await page.waitForLoadState('networkidle');
-        await page.waitForSelector('#login_form', { timeout: 30000 });
-
-        const form = page.locator('#login_form');
-        await form.locator('#login_form_login').fill(matomoUser);
-        await form.locator('#login_form_password').fill(matomoPassword);
-        await page.waitForTimeout(500);
-        await form.locator('input[type="submit"]').click();
-        await page.waitForURL(/(?!.*module=Login)|.*module=CoreHome/, { timeout: 30000 });
-        await page.waitForLoadState('networkidle');
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
     });
 
     test('Controller: funnel name is required', async ({ page }) => {
@@ -510,17 +432,7 @@ test.describe('FunnelInsights Controller - Navigation', () => {
     const idSite = process.env.MATOMO_IDSITE || '1';
 
     test.beforeEach(async ({ page }) => {
-        await page.goto(`${matomoUrl}/index.php?module=Login`);
-        await page.waitForLoadState('networkidle');
-        await page.waitForSelector('#login_form', { timeout: 30000 });
-
-        const form = page.locator('#login_form');
-        await form.locator('#login_form_login').fill(matomoUser);
-        await form.locator('#login_form_password').fill(matomoPassword);
-        await page.waitForTimeout(500);
-        await form.locator('input[type="submit"]').click();
-        await page.waitForURL(/(?!.*module=Login)|.*module=CoreHome/, { timeout: 30000 });
-        await page.waitForLoadState('networkidle');
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
     });
 
     test('Controller: cancel button returns to manage page', async ({ page }) => {

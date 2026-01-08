@@ -1,9 +1,14 @@
 import { test, expect } from '@playwright/test';
+import { createTestFunnel, deleteFunnel, loginToMatomo } from './helpers/funnel-helpers.js';
 
 /**
  * E2E Tests for FunnelInsights UI Integration
  *
  * Tests UI components, Vue integration, drag-drop, step ordering, and user interactions.
+ *
+ * IMPORTANT: Tests are self-contained - they CREATE their own test data upfront.
+ * NEVER use conditional logic like `if (element.count() > 0)` to skip actions.
+ * If an element should exist, use expect() to FAIL if it doesn't.
  */
 
 test.describe('FunnelInsights UI - Vue Component Integration', () => {
@@ -13,17 +18,7 @@ test.describe('FunnelInsights UI - Vue Component Integration', () => {
     const idSite = process.env.MATOMO_IDSITE || '1';
 
     test.beforeEach(async ({ page }) => {
-        await page.goto(`${matomoUrl}/index.php?module=Login`);
-        await page.waitForLoadState('networkidle');
-        await page.waitForSelector('#login_form', { timeout: 30000 });
-
-        const form = page.locator('#login_form');
-        await form.locator('#login_form_login').fill(matomoUser);
-        await form.locator('#login_form_password').fill(matomoPassword);
-        await page.waitForTimeout(500);
-        await form.locator('input[type="submit"]').click();
-        await page.waitForURL(/(?!.*module=Login)|.*module=CoreHome/, { timeout: 30000 });
-        await page.waitForLoadState('networkidle');
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
     });
 
     test('Vue funnel editor component mounts correctly', async ({ page }) => {
@@ -111,9 +106,9 @@ test.describe('FunnelInsights UI - Vue Component Integration', () => {
 
         const stepCard = page.locator('.step-card').first();
 
-        // Should have field/comparison selector
+        // Should have field/comparison selector - use expect to fail if not present
         const fieldSelector = stepCard.locator('select').first();
-        const selectorExists = await fieldSelector.count() > 0;
+        await expect(fieldSelector).toBeAttached();
 
         // Verify no errors
         const content = await page.content();
@@ -134,17 +129,15 @@ test.describe('FunnelInsights UI - Vue Component Integration', () => {
         const initialCount = await page.locator('.step-card').count();
         expect(initialCount).toBe(2);
 
-        // Find and click remove button on first step
+        // Find and click remove button on first step - MUST exist
         const firstStep = page.locator('.step-card').first();
         const removeButton = firstStep.locator('button:has-text("Remove"), button.remove-step, .icon-delete');
+        await expect(removeButton).toBeVisible({ timeout: 5000 });
+        await removeButton.click();
 
-        if (await removeButton.count() > 0) {
-            await removeButton.click();
-
-            // Should have one less step
-            const newCount = await page.locator('.step-card').count();
-            expect(newCount).toBe(initialCount - 1);
-        }
+        // Should have one less step
+        const newCount = await page.locator('.step-card').count();
+        expect(newCount).toBe(initialCount - 1);
     });
 
     test('add condition button adds OR condition', async ({ page }) => {
@@ -160,15 +153,14 @@ test.describe('FunnelInsights UI - Vue Component Integration', () => {
         // Initial condition count
         const initialConditions = await stepCard.locator('.condition-group').count();
 
-        // Add another condition
+        // Add another condition - the button MUST exist
         const addConditionButton = stepCard.locator('button:has-text("Add Condition")');
-        if (await addConditionButton.count() > 0) {
-            await addConditionButton.click();
-            await page.waitForTimeout(500);
+        await expect(addConditionButton).toBeVisible({ timeout: 5000 });
+        await addConditionButton.click();
+        await page.waitForTimeout(500);
 
-            const newConditions = await stepCard.locator('.condition-group').count();
-            expect(newConditions).toBeGreaterThan(initialConditions);
-        }
+        const newConditions = await stepCard.locator('.condition-group').count();
+        expect(newConditions).toBeGreaterThan(initialConditions);
     });
 });
 
@@ -179,17 +171,7 @@ test.describe('FunnelInsights UI - Step Ordering', () => {
     const idSite = process.env.MATOMO_IDSITE || '1';
 
     test.beforeEach(async ({ page }) => {
-        await page.goto(`${matomoUrl}/index.php?module=Login`);
-        await page.waitForLoadState('networkidle');
-        await page.waitForSelector('#login_form', { timeout: 30000 });
-
-        const form = page.locator('#login_form');
-        await form.locator('#login_form_login').fill(matomoUser);
-        await form.locator('#login_form_password').fill(matomoPassword);
-        await page.waitForTimeout(500);
-        await form.locator('input[type="submit"]').click();
-        await page.waitForURL(/(?!.*module=Login)|.*module=CoreHome/, { timeout: 30000 });
-        await page.waitForLoadState('networkidle');
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
     });
 
     test('steps maintain order when saving', async ({ page }) => {
@@ -224,15 +206,14 @@ test.describe('FunnelInsights UI - Step Ordering', () => {
         await page.waitForLoadState('networkidle');
         await page.waitForSelector('.funnel-editor', { timeout: 15000 });
 
-        // Check step names are in order
+        // Check step names are in order - we created 3 steps, they MUST be there
         const stepCards = page.locator('.step-card');
         const stepCount = await stepCards.count();
+        expect(stepCount).toBe(3);
 
-        if (stepCount >= 3) {
-            for (let i = 0; i < stepNames.length; i++) {
-                const nameValue = await stepCards.nth(i).locator('input[placeholder="e.g. Landing Page"]').inputValue();
-                expect(nameValue).toBe(stepNames[i]);
-            }
+        for (let i = 0; i < stepNames.length; i++) {
+            const nameValue = await stepCards.nth(i).locator('input[placeholder="e.g. Landing Page"]').inputValue();
+            expect(nameValue).toBe(stepNames[i]);
         }
 
         // Cleanup
@@ -270,17 +251,7 @@ test.describe('FunnelInsights UI - Validator Section', () => {
     const idSite = process.env.MATOMO_IDSITE || '1';
 
     test.beforeEach(async ({ page }) => {
-        await page.goto(`${matomoUrl}/index.php?module=Login`);
-        await page.waitForLoadState('networkidle');
-        await page.waitForSelector('#login_form', { timeout: 30000 });
-
-        const form = page.locator('#login_form');
-        await form.locator('#login_form_login').fill(matomoUser);
-        await form.locator('#login_form_password').fill(matomoPassword);
-        await page.waitForTimeout(500);
-        await form.locator('input[type="submit"]').click();
-        await page.waitForURL(/(?!.*module=Login)|.*module=CoreHome/, { timeout: 30000 });
-        await page.waitForLoadState('networkidle');
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
     });
 
     test('validator section is visible', async ({ page }) => {
@@ -288,10 +259,10 @@ test.describe('FunnelInsights UI - Validator Section', () => {
         await page.waitForLoadState('networkidle');
         await page.waitForSelector('.funnel-editor', { timeout: 15000 });
 
-        const validatorSection = page.locator('.validator-section');
-        const validatorExists = await validatorSection.count() > 0;
-
         // Validator section should be present
+        const validatorSection = page.locator('.validator-section');
+        await expect(validatorSection).toBeVisible({ timeout: 10000 });
+
         const content = await page.content();
         expect(content).not.toContain('Fatal error');
     });
@@ -309,21 +280,22 @@ test.describe('FunnelInsights UI - Validator Section', () => {
         await stepCard.locator('input[placeholder="e.g. Landing Page"]').fill('Test Step');
         await stepCard.locator('input[placeholder="value to match"]').fill('/test');
 
-        // Find validator input and test button
+        // Find validator input and test button - they MUST exist
         const validatorInput = page.locator('.validator-section input[placeholder*="example"]');
         const testButton = page.locator('.validator-section button:has-text("Test")');
 
-        if (await validatorInput.count() > 0 && await testButton.count() > 0) {
-            await validatorInput.fill('http://example.com/test');
-            await testButton.click();
+        await expect(validatorInput).toBeVisible({ timeout: 10000 });
+        await expect(testButton).toBeVisible({ timeout: 10000 });
 
-            // Wait for results
-            await page.waitForTimeout(2000);
+        await validatorInput.fill('http://example.com/test');
+        await testButton.click();
 
-            // Should show validation results
-            const content = await page.content();
-            expect(content).not.toContain('Fatal error');
-        }
+        // Wait for results
+        await page.waitForTimeout(2000);
+
+        // Should show validation results without error
+        const content = await page.content();
+        expect(content).not.toContain('Fatal error');
     });
 
     test('validator shows match status', async ({ page }) => {
@@ -339,23 +311,23 @@ test.describe('FunnelInsights UI - Validator Section', () => {
         await stepCard.locator('input[placeholder="e.g. Landing Page"]').fill('Checkout');
         await stepCard.locator('input[placeholder="value to match"]').fill('/checkout');
 
-        // Test with matching URL
+        // Test with matching URL - elements MUST exist
         const validatorInput = page.locator('.validator-section input[placeholder*="example"]');
         const testButton = page.locator('.validator-section button:has-text("Test")');
 
-        if (await validatorInput.count() > 0 && await testButton.count() > 0) {
-            await validatorInput.fill('http://example.com/checkout/step1');
-            await testButton.click();
+        await expect(validatorInput).toBeVisible({ timeout: 10000 });
+        await expect(testButton).toBeVisible({ timeout: 10000 });
 
-            await page.waitForTimeout(2000);
+        await validatorInput.fill('http://example.com/checkout/step1');
+        await testButton.click();
 
-            // Check for match indication
-            const validationResults = page.locator('.validation-results');
-            if (await validationResults.count() > 0) {
-                const resultsText = await validationResults.textContent();
-                expect(resultsText?.toLowerCase()).toContain('match');
-            }
-        }
+        await page.waitForTimeout(2000);
+
+        // Check for match indication
+        const validationResults = page.locator('.validation-results');
+        await expect(validationResults).toBeVisible({ timeout: 10000 });
+        const resultsText = await validationResults.textContent();
+        expect(resultsText?.toLowerCase()).toContain('match');
     });
 });
 
@@ -366,17 +338,7 @@ test.describe('FunnelInsights UI - Form Interactions', () => {
     const idSite = process.env.MATOMO_IDSITE || '1';
 
     test.beforeEach(async ({ page }) => {
-        await page.goto(`${matomoUrl}/index.php?module=Login`);
-        await page.waitForLoadState('networkidle');
-        await page.waitForSelector('#login_form', { timeout: 30000 });
-
-        const form = page.locator('#login_form');
-        await form.locator('#login_form_login').fill(matomoUser);
-        await form.locator('#login_form_password').fill(matomoPassword);
-        await page.waitForTimeout(500);
-        await form.locator('input[type="submit"]').click();
-        await page.waitForURL(/(?!.*module=Login)|.*module=CoreHome/, { timeout: 30000 });
-        await page.waitForLoadState('networkidle');
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
     });
 
     test('form submit button is visible', async ({ page }) => {
@@ -459,18 +421,32 @@ test.describe('FunnelInsights UI - Manage Page', () => {
     const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
     const idSite = process.env.MATOMO_IDSITE || '1';
 
-    test.beforeEach(async ({ page }) => {
-        await page.goto(`${matomoUrl}/index.php?module=Login`);
-        await page.waitForLoadState('networkidle');
-        await page.waitForSelector('#login_form', { timeout: 30000 });
+    // Create a test funnel for manage page tests
+    let testFunnelId;
+    let testFunnelName;
 
-        const form = page.locator('#login_form');
-        await form.locator('#login_form_login').fill(matomoUser);
-        await form.locator('#login_form_password').fill(matomoPassword);
-        await page.waitForTimeout(500);
-        await form.locator('input[type="submit"]').click();
-        await page.waitForURL(/(?!.*module=Login)|.*module=CoreHome/, { timeout: 30000 });
-        await page.waitForLoadState('networkidle');
+    test.beforeAll(async ({ browser }) => {
+        const page = await browser.newPage();
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
+
+        testFunnelName = `E2E Manage UI Test ${Date.now()}`;
+        testFunnelId = await createTestFunnel(page, matomoUrl, idSite, testFunnelName, {
+            stepName: 'Manage UI Step',
+            pattern: '/manage-test'
+        });
+
+        await page.close();
+    });
+
+    test.afterAll(async ({ browser }) => {
+        const page = await browser.newPage();
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
+        await deleteFunnel(page, matomoUrl, idSite, testFunnelId);
+        await page.close();
+    });
+
+    test.beforeEach(async ({ page }) => {
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
     });
 
     test('manage page shows funnel table', async ({ page }) => {
@@ -496,39 +472,36 @@ test.describe('FunnelInsights UI - Manage Page', () => {
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
 
-        const funnelRow = page.locator('table.entityTable tbody tr').first();
-        const hasFunnels = await funnelRow.count() > 0;
+        // We created a test funnel, so it MUST exist
+        const funnelRow = page.locator(`table.entityTable tbody tr:has-text("${testFunnelName}")`);
+        await expect(funnelRow).toBeVisible();
 
-        if (hasFunnels) {
-            const editLink = funnelRow.locator('a.icon-edit');
-            await expect(editLink).toBeVisible();
-        }
+        const editLink = funnelRow.locator('a.icon-edit');
+        await expect(editLink).toBeVisible();
     });
 
     test('funnel row has delete action', async ({ page }) => {
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
 
-        const funnelRow = page.locator('table.entityTable tbody tr').first();
-        const hasFunnels = await funnelRow.count() > 0;
+        // We created a test funnel, so it MUST exist
+        const funnelRow = page.locator(`table.entityTable tbody tr:has-text("${testFunnelName}")`);
+        await expect(funnelRow).toBeVisible();
 
-        if (hasFunnels) {
-            const deleteLink = funnelRow.locator('a.icon-delete');
-            await expect(deleteLink).toBeVisible();
-        }
+        const deleteLink = funnelRow.locator('a.icon-delete');
+        await expect(deleteLink).toBeVisible();
     });
 
     test('funnel row has duplicate action', async ({ page }) => {
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
 
-        const funnelRow = page.locator('table.entityTable tbody tr').first();
-        const hasFunnels = await funnelRow.count() > 0;
+        // We created a test funnel, so it MUST exist
+        const funnelRow = page.locator(`table.entityTable tbody tr:has-text("${testFunnelName}")`);
+        await expect(funnelRow).toBeVisible();
 
-        if (hasFunnels) {
-            const duplicateLink = funnelRow.locator('a.icon-copy');
-            await expect(duplicateLink).toBeVisible();
-        }
+        const duplicateLink = funnelRow.locator('a.icon-copy');
+        await expect(duplicateLink).toBeVisible();
     });
 
     test('funnel table shows step count', async ({ page }) => {
@@ -538,8 +511,7 @@ test.describe('FunnelInsights UI - Manage Page', () => {
         const content = await page.content();
         expect(content).not.toContain('Fatal error');
 
-        // Table should show some numeric values for steps
-        const tableContent = await page.locator('table.entityTable').textContent();
-        // Step count column should have numbers
+        // Table should contain our test funnel with step count
+        await expect(page.locator('table.entityTable')).toContainText(testFunnelName);
     });
 });

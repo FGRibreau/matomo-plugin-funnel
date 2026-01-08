@@ -1,9 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { loginToMatomo } from './helpers/funnel-helpers.js';
 
 /**
  * E2E Tests for FunnelInsights Edge Cases
  *
  * Tests edge cases, boundary conditions, and unusual scenarios.
+ *
+ * IMPORTANT: Tests are self-contained - they CREATE their own test data upfront.
+ * Cleanup is done unconditionally in afterEach/afterAll hooks where possible.
  */
 
 test.describe('FunnelInsights Edge Cases - Step Matching', () => {
