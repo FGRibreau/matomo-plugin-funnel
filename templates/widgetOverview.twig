@@ -1,15 +1,16 @@
 {% import '@CoreHome/_dataTableActions.twig' as dataTableActions %}
 
 <div class="funnelOverviewWidget">
-    <div class="reportsByDimensionView"
-         vue-entry="FunnelInsights.FunnelOverviewWidget">
+    <div class="funnelOverviewContent">
+        <div class="loadingIndicator" style="text-align: center; padding: 20px;">
+            <span class="icon-loading"></span>
+        </div>
     </div>
 </div>
 
 <script>
 (function() {
-    // Fallback for non-Vue rendering - fetch and display funnel overview
-    var container = document.querySelector('.funnelOverviewWidget');
+    var container = document.querySelector('.funnelOverviewWidget .funnelOverviewContent');
     if (!container) return;
 
     var params = {
@@ -25,12 +26,27 @@
         return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
     }).join('&');
 
-    fetch(url)
+    var manageUrl = 'index.php?module=FunnelInsights&action=manage&idSite=' + piwik.idSite + '&period=' + piwik.period + '&date=' + piwik.currentDateString;
+    var createUrl = 'index.php?module=FunnelInsights&action=edit&idSite=' + piwik.idSite + '&period=' + piwik.period + '&date=' + piwik.currentDateString;
+
+    fetch(url, { credentials: 'same-origin' })
         .then(function(response) { return response.json(); })
         .then(function(data) {
-            if (data && data.length > 0) {
+            // Handle API error responses
+            if (data && data.result === 'error') {
+                container.innerHTML = '<div class="notification system notification-warning">' +
+                    '<strong>{{ "General_Error"|translate }}:</strong> ' + (data.message || '{{ "General_Unknown"|translate }}') +
+                    '</div>';
+                return;
+            }
+
+            // Check if data is an array with items
+            if (Array.isArray(data) && data.length > 0) {
                 var html = '<div class="card"><div class="card-content">';
-                html += '<h3 class="card-title">{{ "FunnelInsights_ActiveFunnels"|translate }}</h3>';
+                html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">';
+                html += '<h3 class="card-title" style="margin: 0;">{{ "FunnelInsights_ActiveFunnels"|translate }}</h3>';
+                html += '<a href="' + manageUrl + '" class="btn btn-flat btn-small"><span class="icon-settings"></span></a>';
+                html += '</div>';
                 html += '<table class="dataTable entityTable"><thead><tr>';
                 html += '<th>{{ "General_Name"|translate }}</th>';
                 html += '<th>{{ "FunnelInsights_Entries"|translate }}</th>';
@@ -51,11 +67,18 @@
                 html += '</tbody></table></div></div>';
                 container.innerHTML = html;
             } else {
-                container.innerHTML = '<div class="notification system notification-info">{{ "FunnelInsights_NoActiveFunnels"|translate }}</div>';
+                // No active funnels or empty response
+                container.innerHTML = '<div class="notification system notification-info" style="margin-bottom: 12px;">' +
+                    '{{ "FunnelInsights_NoActiveFunnels"|translate }}' +
+                    '</div>' +
+                    '<a href="' + createUrl + '" class="btn"><span class="icon-add"></span> {{ "FunnelInsights_CreateFunnel"|translate }}</a>' +
+                    ' <a href="' + manageUrl + '" class="btn btn-flat">{{ "FunnelInsights_ManageFunnels"|translate }}</a>';
             }
         })
         .catch(function(err) {
-            container.innerHTML = '<div class="notification system notification-warning">{{ "General_Error"|translate }}: ' + err.message + '</div>';
+            container.innerHTML = '<div class="notification system notification-warning">' +
+                '<strong>{{ "General_Error"|translate }}:</strong> ' + err.message +
+                '</div>';
         });
 })();
 </script>
