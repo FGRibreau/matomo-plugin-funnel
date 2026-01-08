@@ -75,31 +75,36 @@ class Archiver extends AbstractArchiver
             }
             
             $placeholders = implode(',', array_fill(0, count($visitIds), '?'));
-            // Site search terms are stored in log_action (type=8), linked via idaction_name
-            // We detect site search by checking if the URL action type is TYPE_SITE_SEARCH (8)
+            // Event data: category & action have dedicated columns, event name uses idaction_name
+            // Site search: search term is in idaction_name when url action type = 8
             $sqlActions = "
                 SELECT
                     l.idvisit, l.server_time,
                     a_url.name AS url,
+                    a_url.type AS url_type,
                     a_name.name AS pageTitle,
-                    CASE WHEN a_url.type = 8 THEN a_name.name ELSE NULL END AS search_term,
+                    a_name.type AS name_type,
                     a_cat.name AS eventCategory,
-                    a_act.name AS eventAction,
-                    a_evtname.name AS eventName
+                    a_act.name AS eventAction
                 FROM {$logLinkVisitAction} AS l
                 LEFT JOIN {$logAction} AS a_url ON l.idaction_url = a_url.idaction
                 LEFT JOIN {$logAction} AS a_name ON l.idaction_name = a_name.idaction
                 LEFT JOIN {$logAction} AS a_cat ON l.idaction_event_category = a_cat.idaction
                 LEFT JOIN {$logAction} AS a_act ON l.idaction_event_action = a_act.idaction
-                LEFT JOIN {$logAction} AS a_evtname ON l.idaction_event_name = a_evtname.idaction
                 WHERE l.idvisit IN ({$placeholders})
                 ORDER BY l.idvisit, l.server_time ASC
             ";
 
             $rows = Db::get()->fetchAll($sqlActions, $visitIds);
-            
+
             $visits = array();
             foreach ($rows as $row) {
+                // Derive search_term and eventName based on Matomo action types
+                // Type 8 = TYPE_SITE_SEARCH (search term is in pageTitle/name)
+                // Type 10 = TYPE_EVENT_NAME (event name is in pageTitle/name)
+                $row['search_term'] = ($row['url_type'] == 8) ? $row['pageTitle'] : null;
+                $row['eventName'] = ($row['name_type'] == 10) ? $row['pageTitle'] : null;
+
                 $visits[$row['idvisit']][] = $row;
             }
 
