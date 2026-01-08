@@ -425,6 +425,111 @@ test.describe('FunnelInsights Controller - Form Validation', () => {
     });
 });
 
+test.describe('FunnelInsights Controller - viewFunnel Design Regression (v3.0.39)', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    test.beforeEach(async ({ page }) => {
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
+    });
+
+    // Helper to get first available funnel ID from the manage page
+    async function getFirstFunnelId(page) {
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+
+        const editLink = page.locator('table.entityTable a[href*="action=edit"][href*="idFunnel="]').first();
+        if (await editLink.count() > 0) {
+            const href = await editLink.getAttribute('href');
+            const match = href.match(/idFunnel=(\d+)/);
+            return match ? match[1] : null;
+        }
+        return null;
+    }
+
+    test('viewFunnel: has admin layout wrapper with sidebar menu', async ({ page }) => {
+        // Get an existing funnel to test with
+        const idFunnel = await getFirstFunnelId(page);
+        expect(idFunnel).toBeTruthy();
+
+        // TEST: View the funnel page
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=viewFunnel&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        const content = await page.content();
+        expect(content).not.toContain('Fatal error');
+        expect(content).not.toContain('Parse error');
+
+        // Verify admin layout wrapper is present (these are elements from admin.twig)
+        // The page should have the admin sidebar/menu structure
+        await expect(page.locator('#root')).toBeAttached({ timeout: 10000 });
+
+        // Verify admin sidebar navigation is present (from extends admin.twig)
+        const adminMenu = page.locator('nav, .menu, #menu, [class*="menu"]').first();
+        await expect(adminMenu).toBeAttached({ timeout: 5000 });
+
+        // The card content should be properly styled within admin layout
+        await expect(page.locator('.card').first()).toBeVisible({ timeout: 10000 });
+
+        // Check that the funnel name appears in the styled layout
+        await expect(page.locator('.card-title').first()).toBeVisible();
+    });
+
+    test('viewFunnel: stats boxes are visible and styled', async ({ page }) => {
+        const idFunnel = await getFirstFunnelId(page);
+        expect(idFunnel).toBeTruthy();
+
+        // TEST
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=viewFunnel&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        // Verify stat boxes are rendered
+        await expect(page.locator('.funnel-stats')).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('.stat-box').first()).toBeVisible();
+
+        // Should have 3 stat boxes (entries, conversions, rate)
+        const statBoxes = page.locator('.stat-box');
+        await expect(statBoxes).toHaveCount(3);
+    });
+
+    test('viewFunnel: back and edit buttons are visible', async ({ page }) => {
+        const idFunnel = await getFirstFunnelId(page);
+        expect(idFunnel).toBeTruthy();
+
+        // TEST
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=viewFunnel&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        // Verify navigation buttons are visible
+        const backButton = page.locator('a.btn-flat:has(.icon-arrow-left)');
+        const editButton = page.locator('a.btn:has(.icon-edit)');
+
+        await expect(backButton).toBeVisible({ timeout: 10000 });
+        await expect(editButton).toBeVisible();
+
+        // Back button should link to index
+        await expect(backButton).toHaveAttribute('href', /action=index/);
+
+        // Edit button should link to edit with correct idFunnel
+        await expect(editButton).toHaveAttribute('href', new RegExp(`idFunnel=${idFunnel}`));
+    });
+
+    test('viewFunnel: funnel steps section is displayed', async ({ page }) => {
+        const idFunnel = await getFirstFunnelId(page);
+        expect(idFunnel).toBeTruthy();
+
+        // TEST
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=viewFunnel&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        // Verify funnel visualization section exists (card with Steps header)
+        const stepsCard = page.locator('.card').filter({ hasText: 'Steps' });
+        await expect(stepsCard).toBeVisible({ timeout: 10000 });
+    });
+});
+
 test.describe('FunnelInsights Controller - Navigation', () => {
     const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
     const matomoUser = process.env.MATOMO_USER || 'admin';

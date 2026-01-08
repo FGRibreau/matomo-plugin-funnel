@@ -49,9 +49,9 @@ export async function createTestFunnel(page, matomoUrl, idSite, name, options = 
 
     // Activate the funnel (unless explicitly disabled)
     if (options.active !== false) {
-        const activeCheckbox = page.locator('input[name="active"], #active');
-        if (await activeCheckbox.count() > 0) {
-            await activeCheckbox.check();
+        const activeSelect = page.locator('select#active, select[name="active"]');
+        if (await activeSelect.count() > 0) {
+            await activeSelect.selectOption('1'); // 1 = active
         }
     }
 
