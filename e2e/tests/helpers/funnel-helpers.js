@@ -21,55 +21,41 @@ export async function createTestFunnel(page, matomoUrl, idSite, name, options = 
     await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}&idFunnel=0`);
     await page.waitForLoadState('networkidle');
 
+    // Wait for Vue component to mount
+    await page.waitForSelector('.funnel-editor', { timeout: 15000 });
+
     // Fill funnel name
-    await page.locator('input[name="name"]').fill(name);
+    await page.locator('input#name').fill(name);
 
-    // Add a step
-    const addStepButton = page.locator('#addStepButton, .addStepButton, button:has-text("Add Step")');
-    if (await addStepButton.count() > 0) {
-        await addStepButton.first().click();
-        await page.waitForTimeout(500);
+    // Add a step using the Vue component's add button
+    await page.locator('.funnel-editor button.add-step-btn, .funnel-editor button:has-text("+ Add Step")').click();
+    await page.waitForSelector('.step-card', { timeout: 5000 });
 
-        // Fill step name and condition
-        const stepNameInput = page.locator('input[name*="step"][name*="name"], .step-name-input').first();
-        if (await stepNameInput.count() > 0) {
-            await stepNameInput.fill(options.stepName || 'Homepage');
-        }
+    // Fill step name (first input in step-card with the placeholder)
+    const stepCard = page.locator('.step-card').first();
+    await stepCard.locator('input[placeholder="e.g. Landing Page"]').fill(options.stepName || 'Homepage');
 
-        const comparisonSelect = page.locator('select[name*="comparison"], .comparison-select').first();
-        if (await comparisonSelect.count() > 0) {
-            await comparisonSelect.selectOption(options.comparison || 'path');
-        }
+    // Select comparison type (the Vue component uses v-model on select)
+    const comparisonSelect = stepCard.locator('.condition-part select').first();
+    await comparisonSelect.selectOption(options.comparison || 'path');
 
-        const patternInput = page.locator('input[name*="pattern"], .pattern-input').first();
-        if (await patternInput.count() > 0) {
-            await patternInput.fill(options.pattern || '/');
-        }
-    }
+    // Fill pattern (input in the flex-grow condition-part)
+    const patternInput = stepCard.locator('.condition-part.flex-grow input');
+    await patternInput.fill(options.pattern || '/');
 
     // Activate the funnel (unless explicitly disabled)
     if (options.active !== false) {
-        const activeSelect = page.locator('select#active, select[name="active"]');
-        if (await activeSelect.count() > 0) {
-            await activeSelect.selectOption('1'); // 1 = active
-        }
+        await page.locator('select#active').selectOption('1');
     }
 
     // Submit form
-    await page.locator('input[type="submit"], button[type="submit"]').click();
+    await page.locator('input[type="submit"].btn').click();
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
 
-    // Get the created funnel ID from URL
-    const url = page.url();
-    const idMatch = url.match(/idFunnel=(\d+)/);
-    if (idMatch && idMatch[1] !== '0') {
-        return parseInt(idMatch[1]);
-    }
+    // Wait for redirect to manage page
+    await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
 
-    // Fallback: get from manage page
-    await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
-    await page.waitForLoadState('networkidle');
+    // Get the created funnel ID from manage page
     const row = page.locator(`table.entityTable tbody tr:has-text("${name}")`).first();
     if (await row.count() > 0) {
         const editLink = row.locator('a[href*="idFunnel="]');

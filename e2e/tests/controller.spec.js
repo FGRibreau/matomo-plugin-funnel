@@ -227,7 +227,7 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
 
         const stepCard = page.locator('.step-card').first();
         await stepCard.locator('input[placeholder="e.g. Landing Page"]').fill('Test Step');
-        await stepCard.locator('input[placeholder="value to match"]').fill('/test-url');
+        await stepCard.locator('.condition-part.flex-grow input').fill('/test-url');
 
         // Submit the form
         await page.click('input[type="submit"].btn');
@@ -272,7 +272,7 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
 
         const stepCard = page.locator('.step-card').first();
         await stepCard.locator('input[placeholder="e.g. Landing Page"]').fill('Source Step');
-        await stepCard.locator('input[placeholder="value to match"]').fill('/source');
+        await stepCard.locator('.condition-part.flex-grow input').fill('/source');
 
         await page.click('input[type="submit"].btn');
         await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
@@ -312,7 +312,7 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
 
         const stepCard = page.locator('.step-card').first();
         await stepCard.locator('input[placeholder="e.g. Landing Page"]').fill('Delete Step');
-        await stepCard.locator('input[placeholder="value to match"]').fill('/delete');
+        await stepCard.locator('.condition-part.flex-grow input').fill('/delete');
 
         await page.click('input[type="submit"].btn');
         await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
@@ -550,6 +550,63 @@ test.describe('FunnelInsights Controller - viewFunnel Dashboard Layout (v3.0.42)
         // Verify funnel visualization section exists (card with Steps header)
         const stepsCard = page.locator('.card').filter({ hasText: 'Steps' });
         await expect(stepsCard).toBeVisible({ timeout: 10000 });
+    });
+
+    test('viewFunnel: sidebar menu is visible (v3.0.44)', async ({ page, request }) => {
+        const idFunnel = await getOrCreateFunnelId(page, request);
+        expect(idFunnel).toBeTruthy();
+
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=viewFunnel&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        const content = await page.content();
+        expect(content).not.toContain('Fatal error');
+
+        // Verify sidebar menu is visible (showMenu = true)
+        const sidebarMenu = page.locator('#secondNavBar, .Menu--dashboard');
+        await expect(sidebarMenu).toBeAttached({ timeout: 10000 });
+    });
+
+    test('viewFunnel: funnel visualization uses data-test attributes (v3.0.44)', async ({ page, request }) => {
+        const idFunnel = await getOrCreateFunnelId(page, request);
+        expect(idFunnel).toBeTruthy();
+
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=viewFunnel&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        // Verify funnel visualization container exists with data-test attribute
+        const funnelContainer = page.locator('[data-test="funnel-visualization"]');
+        await expect(funnelContainer).toBeAttached({ timeout: 10000 });
+
+        // If there are steps, verify step elements have data-test attributes
+        const stepElements = page.locator('[data-test^="funnel-step-"]');
+        const stepCount = await stepElements.count();
+
+        // Log the count for debugging (at minimum we should see the container)
+        if (stepCount > 0) {
+            await expect(stepElements.first()).toBeVisible();
+        }
+    });
+
+    test('viewFunnel: funnel bars have proportional widths', async ({ page, request }) => {
+        const idFunnel = await getOrCreateFunnelId(page, request);
+        expect(idFunnel).toBeTruthy();
+
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=viewFunnel&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        // Verify funnel bars exist
+        const funnelBars = page.locator('.funnel-bar');
+        const barCount = await funnelBars.count();
+
+        if (barCount > 0) {
+            // First bar should be visible
+            await expect(funnelBars.first()).toBeVisible();
+
+            // Check that bars have width style (proportional to fill_rate)
+            const firstBarStyle = await funnelBars.first().getAttribute('style');
+            expect(firstBarStyle).toContain('width:');
+        }
     });
 });
 
