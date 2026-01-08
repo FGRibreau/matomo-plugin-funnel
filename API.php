@@ -221,64 +221,151 @@ class API extends \Piwik\Plugin\API
     /**
      * Returns a summary report of all active funnels for the site.
      * Metrics: Entries, Conversions (Visits at last step), Conversion Rate.
+     *
+     * Returns DataTable for single dates (for HTML table rendering)
+     * Returns DataTable\Map for date ranges (for Row Evolution support)
+     *
+     * CRITICAL: For Row Evolution to work, the returned Map must have:
+     * 1. Same key format as archive (date strings like "2024-01-15")
+     * 2. Period metadata copied from archive tables (for Period::factory())
+     *
+     * @return DataTable|Map
      */
     public function getOverview($idSite, $period, $date)
     {
         Piwik::checkUserHasViewAccess($idSite);
 
         $funnels = $this->dao->getAllForSite($idSite);
-        $reportData = array();
+        $activeFunnels = array_filter($funnels, function($f) { return $f['active']; });
+
+        // If no active funnels, return empty DataTable
+        if (empty($activeFunnels)) {
+            return new DataTable();
+        }
 
         $archive = Archive::build($idSite, $period, $date);
 
-        foreach ($funnels as $funnel) {
-            if (!$funnel['active']) continue;
+        // Get first funnel's data as template to detect Map vs DataTable
+        $firstFunnel = reset($activeFunnels);
+        $templateResult = $archive->getDataTable('FunnelInsights_Funnel_' . $firstFunnel['idfunnel']);
 
+        // Single date: Archive returns plain DataTable
+        if (!($templateResult instanceof Map)) {
+            return $this->buildOverviewTableSingle($archive, $activeFunnels);
+        }
+
+        // Date range: Archive returns Map - MUST preserve metadata for Row Evolution
+        // Pre-fetch all funnel archives to avoid repeated queries
+        $funnelArchives = array();
+        foreach ($activeFunnels as $funnel) {
+            $funnelArchives[$funnel['idfunnel']] = $archive->getDataTable('FunnelInsights_Funnel_' . $funnel['idfunnel']);
+        }
+
+        // Create result Map, copying structure from template
+        $resultMap = new Map();
+        $resultMap->setKeyName($templateResult->getKeyName());
+
+        // Copy Map-level metadata from template (required for Row Evolution)
+        foreach ($templateResult->getMetadata() as $key => $value) {
+            $resultMap->setMetadata($key, $value);
+        }
+
+        // Build overview table for each date, preserving table-level metadata
+        foreach ($templateResult->getDataTables() as $dateKey => $templateTable) {
+            $summaryTable = new DataTable();
+
+            // CRITICAL: Copy period metadata from template table
+            // Row Evolution uses this to call Period::factory() and getDateStart()
+            if ($templateTable instanceof DataTable) {
+                foreach ($templateTable->getMetadata() as $metaKey => $metaValue) {
+                    $summaryTable->setMetadata($metaKey, $metaValue);
+                }
+            }
+
+            // Build summary data for this date
+            $reportData = array();
+            foreach ($activeFunnels as $funnel) {
+                $idFunnel = $funnel['idfunnel'];
+                $funnelMap = $funnelArchives[$idFunnel];
+
+                $dataTable = null;
+                if ($funnelMap instanceof Map) {
+                    $tables = $funnelMap->getDataTables();
+                    if (isset($tables[$dateKey])) {
+                        $dataTable = $tables[$dateKey];
+                    }
+                }
+
+                $reportData[] = $this->buildFunnelSummaryRow($funnel, $dataTable);
+            }
+
+            $summaryTable->addRowsFromSimpleArray($reportData);
+            $resultMap->addTable($summaryTable, $dateKey);
+        }
+
+        return $resultMap;
+    }
+
+    /**
+     * Build overview summary for a single date (when archive returns plain DataTable).
+     */
+    private function buildOverviewTableSingle($archive, $activeFunnels): DataTable
+    {
+        $reportData = array();
+
+        foreach ($activeFunnels as $funnel) {
             $idFunnel = $funnel['idfunnel'];
             $result = $archive->getDataTable('FunnelInsights_Funnel_' . $idFunnel);
             $dataTable = $this->extractDataTable($result);
 
-            if (!$dataTable || $dataTable->getRowsCount() === 0) {
-                $reportData[] = array(
-                    'label' => $funnel['name'],
-                    'idfunnel' => $idFunnel,
-                    'entries' => 0,
-                    'conversions' => 0,
-                    'conversion_rate' => '0%'
-                );
-                continue;
-            }
+            $reportData[] = $this->buildFunnelSummaryRow($funnel, $dataTable);
+        }
 
-            $entries = 0;
-            $conversions = 0;
+        $resultTable = new DataTable();
+        $resultTable->addRowsFromSimpleArray($reportData);
+        return $resultTable;
+    }
 
-            $rows = $dataTable->getRows();
-            if (!empty($rows)) {
-                // Step 0 is usually entry
-                $firstRow = $dataTable->getFirstRow();
-                $entries = $firstRow ? ($firstRow->getColumn('entries') ?: 0) : 0;
+    /**
+     * Build a summary row for a single funnel from its archived data.
+     */
+    private function buildFunnelSummaryRow($funnel, $dataTable): array
+    {
+        $idFunnel = $funnel['idfunnel'];
 
-                // Last step is conversion
-                $lastRow = $dataTable->getLastRow();
-                $conversions = $lastRow ? ($lastRow->getColumn('visits') ?: 0) : 0;
-            }
-
-            $rate = ($entries > 0) ? ($conversions / $entries * 100) : 0;
-
-            $reportData[] = array(
+        if (!$dataTable || $dataTable->getRowsCount() === 0) {
+            return array(
                 'label' => $funnel['name'],
                 'idfunnel' => $idFunnel,
-                'entries' => $entries,
-                'conversions' => $conversions,
-                'conversion_rate' => round($rate, 1)
+                'entries' => 0,
+                'conversions' => 0,
+                'conversion_rate' => 0
             );
         }
 
-        // Convert to DataTable for renderer
-        $resultTable = new \Piwik\DataTable();
-        $resultTable->addRowsFromSimpleArray($reportData);
+        $entries = 0;
+        $conversions = 0;
 
-        return $resultTable;
+        $rows = $dataTable->getRows();
+        if (!empty($rows)) {
+            // Step 0 is usually entry
+            $firstRow = $dataTable->getFirstRow();
+            $entries = $firstRow ? ($firstRow->getColumn('entries') ?: 0) : 0;
+
+            // Last step is conversion
+            $lastRow = $dataTable->getLastRow();
+            $conversions = $lastRow ? ($lastRow->getColumn('visits') ?: 0) : 0;
+        }
+
+        $rate = ($entries > 0) ? ($conversions / $entries * 100) : 0;
+
+        return array(
+            'label' => $funnel['name'],
+            'idfunnel' => $idFunnel,
+            'entries' => $entries,
+            'conversions' => $conversions,
+            'conversion_rate' => round($rate, 1)
+        );
     }
 
     /**

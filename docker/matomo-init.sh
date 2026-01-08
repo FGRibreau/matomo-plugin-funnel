@@ -85,6 +85,18 @@ fi
 echo "Clearing brute force lockouts..."
 mysql -h db -umatomo -pmatomo matomo -e "TRUNCATE TABLE matomo_brute_force_log" 2>/dev/null || echo "No brute force table to clear"
 
+# Copy the token endpoint for E2E tests
+if [ -f "$SOURCE_DIR/docker/get-token.php" ]; then
+    cp "$SOURCE_DIR/docker/get-token.php" /var/www/html/get-token.php
+    chown www-data:www-data /var/www/html/get-token.php
+    echo "Token endpoint installed at /get-token.php"
+fi
+
+# Create .htaccess to pass Authorization header to PHP (required for Bearer token auth)
+echo 'SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1' > /var/www/html/.htaccess
+chown www-data:www-data /var/www/html/.htaccess
+echo ".htaccess created for Authorization header passthrough"
+
 # Activate the plugin
 echo "Activating FunnelInsights plugin..."
 php console plugin:activate FunnelInsights 2>&1 || {
@@ -105,9 +117,26 @@ chown -R www-data:www-data /var/www/html/tmp
 chown -R www-data:www-data /var/www/html/config
 chmod -R 755 /var/www/html/tmp
 
-echo ""
-echo "======================================"
-echo "FunnelInsights E2E environment ready!"
-echo "Matomo URL: http://localhost:8080"
-echo "Admin credentials: admin / adminpassword123"
-echo "======================================"
+# Retrieve and display the token for tests
+TOKEN_FILE="/var/www/html/tmp/e2e-token.txt"
+if [ -f "$TOKEN_FILE" ]; then
+    TOKEN=$(cat "$TOKEN_FILE")
+    echo ""
+    echo "======================================"
+    echo "FunnelInsights E2E environment ready!"
+    echo "Matomo URL: http://localhost:8080"
+    echo "Admin credentials: admin / adminpassword123"
+    echo "Token auth: $TOKEN"
+    echo ""
+    echo "To run tests with this token:"
+    echo "MATOMO_TOKEN_AUTH=$TOKEN npm test"
+    echo "======================================"
+else
+    echo ""
+    echo "======================================"
+    echo "FunnelInsights E2E environment ready!"
+    echo "Matomo URL: http://localhost:8080"
+    echo "Admin credentials: admin / adminpassword123"
+    echo "WARNING: No token file found at $TOKEN_FILE"
+    echo "======================================"
+fi

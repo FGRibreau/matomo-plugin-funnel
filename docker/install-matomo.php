@@ -61,6 +61,10 @@ debug = 0
 [brute_force_detection]
 enabled = 0
 
+[API]
+; Allow token_auth in URL GET parameters (required for E2E testing)
+only_allow_secure_auth_tokens = 0
+
 CONFIG;
 
 file_put_contents($configFile, $configContent);
@@ -130,6 +134,44 @@ try {
         echo "Admin user already exists.\n";
     }
 
+    // Create a test token_auth for E2E tests using direct SQL
+    // Note: UsersManagerAPI::createTokenAuth() hangs in CLI mode, so we use direct insertion
+    echo "Creating test API token...\n";
+    $testTokenDescription = 'E2E Test Token';
+    $tokenExists = $db->fetchOne("SELECT idusertokenauth FROM matomo_user_token_auth WHERE description = ? AND login = ?", [$testTokenDescription, $adminLogin]);
+
+    if (!$tokenExists) {
+        // Generate a random 32-character token (hex)
+        $tokenAuth = bin2hex(random_bytes(16));
+
+        // Hash the token using SHA-512 WITH SALT (Matomo requires token + salt)
+        $hashedToken = hash('sha512', $tokenAuth . $salt);
+
+        // Insert directly into the database
+        $db->query(
+            "INSERT INTO matomo_user_token_auth (login, description, password, hash_algo, date_created, date_expired, last_used, secure_only, system_token)
+             VALUES (?, ?, ?, 'sha512', NOW(), NULL, NULL, 0, 0)",
+            [$adminLogin, $testTokenDescription, $hashedToken]
+        );
+
+        echo "Test API token created: $tokenAuth\n";
+
+        // Save token to file for E2E tests to read
+        $tokenFile = '/var/www/html/tmp/e2e-token.txt';
+        file_put_contents($tokenFile, $tokenAuth);
+        chmod($tokenFile, 0644);
+        echo "Token saved to: $tokenFile\n";
+    } else {
+        echo "Test API token already exists.\n";
+        // Check if token file exists
+        $tokenFile = '/var/www/html/tmp/e2e-token.txt';
+        if (file_exists($tokenFile)) {
+            echo "Token file exists at: $tokenFile\n";
+        } else {
+            echo "WARNING: Token exists in DB but no token file. You may need to recreate the environment.\n";
+        }
+    }
+
     // Create first website directly via SQL to avoid hook issues
     echo "Creating first website...\n";
 
@@ -142,8 +184,24 @@ try {
             [$siteName, $siteUrl]
         );
         echo "Website created with ID: 1\n";
+
+        // Grant admin user access to the site (required even for superusers in some API calls)
+        $db->query(
+            "INSERT INTO matomo_access (login, idsite, access) VALUES (?, 1, 'admin')",
+            [$adminLogin]
+        );
+        echo "Admin user granted admin access to site 1.\n";
     } else {
         echo "Website already exists.\n";
+        // Ensure admin has access
+        $accessExists = $db->fetchOne("SELECT idsite FROM matomo_access WHERE login = ? AND idsite = 1", [$adminLogin]);
+        if (!$accessExists) {
+            $db->query(
+                "INSERT INTO matomo_access (login, idsite, access) VALUES (?, 1, 'admin')",
+                [$adminLogin]
+            );
+            echo "Admin user granted admin access to existing site 1.\n";
+        }
     }
 
     // Mark installation as complete
