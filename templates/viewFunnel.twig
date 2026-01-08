@@ -3,10 +3,11 @@
         <h2 class="card-title">{{ funnel.name }}</h2>
 
         {% if funnel.goal_id %}
-        <p class="card-description">
+        <div class="notification system notification-info" style="margin-bottom: 16px; padding: 12px;">
             <span class="icon-goal"></span>
-            {{ 'FunnelInsights_AssociatedGoal'|translate }}: #{{ funnel.goal_id }}
-        </p>
+            <strong>{{ 'FunnelInsights_AssociatedGoal'|translate }}:</strong> Goal #{{ funnel.goal_id }}
+            <br><small style="opacity: 0.8;">{{ 'FunnelInsights_GoalFilterHelp'|translate }}</small>
+        </div>
         {% endif %}
 
         <div class="funnel-stats" style="display: flex; gap: 24px; margin: 24px 0;">

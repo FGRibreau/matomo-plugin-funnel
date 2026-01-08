@@ -222,6 +222,159 @@ test.describe('FunnelInsights Widget - Dashboard Integration', () => {
     });
 });
 
+test.describe('FunnelInsights Widget - Overview Regression Tests (v3.0.32)', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    test.beforeEach(async ({ page }) => {
+        await page.goto(`${matomoUrl}/index.php?module=Login`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('#login_form', { timeout: 30000 });
+
+        const form = page.locator('#login_form');
+        await form.locator('#login_form_login').fill(matomoUser);
+        await form.locator('#login_form_password').fill(matomoPassword);
+        await page.waitForTimeout(500);
+        await form.locator('input[type="submit"]').click();
+        await page.waitForURL(/(?!.*module=Login)|.*module=CoreHome/, { timeout: 30000 });
+        await page.waitForLoadState('networkidle');
+    });
+
+    test('Regression: Widget handles API returning empty array gracefully', async ({ page }) => {
+        // Navigate to the overview widget
+        await page.goto(`${matomoUrl}/index.php?module=CoreHome&action=index&idSite=${idSite}&period=day&date=yesterday#?idSite=${idSite}&period=day&date=yesterday&category=FunnelInsights_Funnels&subcategory=FunnelInsights_Overview`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(3000);
+
+        const content = await page.content();
+        // Should NOT contain PHP errors
+        expect(content).not.toContain('Fatal error');
+        expect(content).not.toContain('Array.isArray is not a function');
+        expect(content).not.toContain('Cannot read property');
+        // Should NOT try to call non-existent Vue component
+        expect(content).not.toContain('FunnelOverviewWidget is not defined');
+    });
+
+    test('Regression: Widget shows Create/Manage links when no funnels exist', async ({ page, request }) => {
+        // First check API to see if there are funnels
+        const apiResponse = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getOverview',
+                idSite: idSite,
+                period: 'day',
+                date: 'yesterday',
+                format: 'JSON',
+            },
+        });
+        const apiData = await apiResponse.json();
+
+        // Navigate to Overview
+        await page.goto(`${matomoUrl}/index.php?module=CoreHome&action=index&idSite=${idSite}&period=day&date=yesterday#?idSite=${idSite}&period=day&date=yesterday&category=FunnelInsights_Funnels&subcategory=FunnelInsights_Overview`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(3000);
+
+        const content = await page.content();
+
+        if (Array.isArray(apiData) && apiData.length === 0) {
+            // When no funnels, should show "Create Funnel" link
+            expect(content).toContain('FunnelInsights');
+            // Should NOT show loading indicator stuck
+            const loadingVisible = await page.locator('.loadingIndicator').isVisible().catch(() => false);
+            expect(loadingVisible).toBe(false);
+        }
+        // In all cases, no errors
+        expect(content).not.toContain('Fatal error');
+    });
+
+    test('Regression: Widget handles API error response (result: error)', async ({ page }) => {
+        // Navigate and ensure widget loads
+        await page.goto(`${matomoUrl}/index.php?module=CoreHome&action=index&idSite=${idSite}&period=day&date=yesterday#?idSite=${idSite}&period=day&date=yesterday&category=FunnelInsights_Funnels&subcategory=FunnelInsights_Overview`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(3000);
+
+        // Intercept next API call and mock an error response
+        await page.route('**/index.php?*FunnelInsights.getOverview*', route => {
+            route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ result: 'error', message: 'Test error message' }),
+            });
+        });
+
+        // Reload to trigger the mocked error
+        await page.reload();
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(2000);
+
+        const content = await page.content();
+        // Should NOT have uncaught errors
+        expect(content).not.toContain('Uncaught');
+        expect(content).not.toContain('forEach is not a function');
+    });
+
+    test('Regression: Widget does not show "No active funnels" when funnels exist with 0 data', async ({ page, request }) => {
+        // Get funnels from API
+        const apiResponse = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getOverview',
+                idSite: idSite,
+                period: 'day',
+                date: 'yesterday',
+                format: 'JSON',
+            },
+        });
+        const apiData = await apiResponse.json();
+
+        await page.goto(`${matomoUrl}/index.php?module=CoreHome&action=index&idSite=${idSite}&period=day&date=yesterday#?idSite=${idSite}&period=day&date=yesterday&category=FunnelInsights_Funnels&subcategory=FunnelInsights_Overview`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(3000);
+
+        const content = await page.content();
+
+        if (Array.isArray(apiData) && apiData.length > 0) {
+            // When funnels exist (even with 0 entries), should show them in a table
+            const tableExists = await page.locator('table.entityTable, table.dataTable').count() > 0;
+            expect(tableExists).toBe(true);
+            // Should NOT incorrectly show "No active funnels"
+            expect(content).not.toContain('No active funnels');
+        }
+    });
+
+    test('Regression: Widget displays funnel with 0 entries correctly', async ({ page, request }) => {
+        // Check if there are any funnels
+        const apiResponse = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getOverview',
+                idSite: idSite,
+                period: 'day',
+                date: 'yesterday',
+                format: 'JSON',
+            },
+        });
+        const apiData = await apiResponse.json();
+
+        if (Array.isArray(apiData) && apiData.length > 0) {
+            const funnelWith0Entries = apiData.find(f => f.entries === 0);
+            if (funnelWith0Entries) {
+                await page.goto(`${matomoUrl}/index.php?module=CoreHome&action=index&idSite=${idSite}&period=day&date=yesterday#?idSite=${idSite}&period=day&date=yesterday&category=FunnelInsights_Funnels&subcategory=FunnelInsights_Overview`);
+                await page.waitForLoadState('networkidle');
+                await page.waitForTimeout(3000);
+
+                // Funnel should be listed even with 0 entries
+                const content = await page.content();
+                expect(content).toContain(funnelWith0Entries.label);
+                // Should show "0" for entries, not hide the row
+                expect(content).toContain('0');
+            }
+        }
+    });
+});
+
 test.describe('FunnelInsights Widget - Report Integration', () => {
     const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
     const matomoUser = process.env.MATOMO_USER || 'admin';

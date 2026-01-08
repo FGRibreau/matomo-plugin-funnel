@@ -49,8 +49,7 @@ class StepMatcher
                 break;
             case 'path':
                 $url = isset($hit['url']) ? $hit['url'] : '';
-                $parsed = parse_url($url);
-                $valueToCheck = isset($parsed['path']) ? $parsed['path'] : '';
+                $valueToCheck = $this->extractPath($url);
                 break;
             case 'search_query':
                 $valueToCheck = isset($hit['search_term']) ? $hit['search_term'] : '';
@@ -143,5 +142,52 @@ class StepMatcher
             return false;
         }
         return $result === 1;
+    }
+
+    /**
+     * Extract path from URL, handling Matomo's URL storage format.
+     *
+     * Matomo stores URLs in different formats:
+     * - Full URL: "https://example.com/path"
+     * - Domain-relative: "example.com/path" (no scheme)
+     *
+     * Standard parse_url() fails for scheme-less URLs:
+     * - parse_url("https://example.com/") → path = "/"
+     * - parse_url("example.com/") → path = "example.com/" (WRONG!)
+     *
+     * @param string $url The URL from Matomo log_action
+     * @return string The extracted path (e.g., "/", "/contact", "/whatsapp")
+     */
+    private function extractPath($url)
+    {
+        if (empty($url)) {
+            return '';
+        }
+
+        // If URL has a scheme, parse_url works correctly
+        if (preg_match('#^[a-z][a-z0-9+.-]*://#i', $url)) {
+            $parsed = parse_url($url);
+            return isset($parsed['path']) ? $parsed['path'] : '/';
+        }
+
+        // Handle scheme-less URLs (e.g., "example.com/path")
+        // Check if it starts with a domain-like pattern
+        if (preg_match('#^[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}(/.*)?$#', $url)) {
+            // It's a domain-relative URL, extract path after the domain
+            $slashPos = strpos($url, '/');
+            if ($slashPos !== false) {
+                return substr($url, $slashPos);
+            }
+            // Domain with no path means root
+            return '/';
+        }
+
+        // If it's already a path-like string (starts with /)
+        if (strpos($url, '/') === 0) {
+            return $url;
+        }
+
+        // Fallback: treat the whole thing as the path
+        return '/' . $url;
     }
 }
