@@ -425,6 +425,7 @@ test.describe('FunnelInsights Controller - Form Validation', () => {
     });
 });
 
+// These tests require a funnel to exist - skip if environment not set up
 test.describe('FunnelInsights Controller - viewFunnel Dashboard Layout (v3.0.42)', () => {
     const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
     const matomoUser = process.env.MATOMO_USER || 'admin';
@@ -435,26 +436,33 @@ test.describe('FunnelInsights Controller - viewFunnel Dashboard Layout (v3.0.42)
         await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
     });
 
-    // Helper to get first available funnel ID or create one if none exist
-    async function getOrCreateFunnelId(page) {
-        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
-        await page.waitForLoadState('networkidle');
+    // Helper to get or create a funnel for testing
+    async function getOrCreateFunnelId(page, request) {
+        // First check via API if any funnels exist
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getFunnels',
+                idSite: idSite,
+                format: 'JSON',
+            },
+        });
 
-        const editLink = page.locator('table.entityTable a[href*="action=edit"][href*="idFunnel="]').first();
-        if (await editLink.count() > 0) {
-            const href = await editLink.getAttribute('href');
-            const match = href.match(/idFunnel=(\d+)/);
-            if (match) return match[1];
+        const text = await response.text();
+        if (!text.includes('error') && !text.includes('"result"')) {
+            const funnels = JSON.parse(text);
+            if (Array.isArray(funnels) && funnels.length > 0) {
+                return String(funnels[0].idfunnel);
+            }
         }
 
-        // No funnel exists, create one
-        const testName = `E2E Layout Test ${Date.now()}`;
-        const created = await createTestFunnel(page, matomoUrl, idSite, testName);
+        // No funnels exist, try to create one via the form
+        const created = await createTestFunnel(page, matomoUrl, idSite, `E2E Test ${Date.now()}`);
         return created ? String(created) : null;
     }
 
-    test('viewFunnel: has dashboard layout with period selector', async ({ page }) => {
-        const idFunnel = await getOrCreateFunnelId(page);
+    test('viewFunnel: has dashboard layout with period selector', async ({ page, request }) => {
+        const idFunnel = await getOrCreateFunnelId(page, request);
         expect(idFunnel).toBeTruthy();
 
         // TEST: View the funnel page
@@ -479,8 +487,8 @@ test.describe('FunnelInsights Controller - viewFunnel Dashboard Layout (v3.0.42)
         await expect(page.locator('.card-title').first()).toBeVisible();
     });
 
-    test('viewFunnel: period selector allows date changes', async ({ page }) => {
-        const idFunnel = await getOrCreateFunnelId(page);
+    test('viewFunnel: period selector allows date changes', async ({ page, request }) => {
+        const idFunnel = await getOrCreateFunnelId(page, request);
         expect(idFunnel).toBeTruthy();
 
         // Navigate to viewFunnel
@@ -492,8 +500,8 @@ test.describe('FunnelInsights Controller - viewFunnel Dashboard Layout (v3.0.42)
         await expect(periodSelector).toBeVisible({ timeout: 10000 });
     });
 
-    test('viewFunnel: stats boxes are visible and styled', async ({ page }) => {
-        const idFunnel = await getOrCreateFunnelId(page);
+    test('viewFunnel: stats boxes are visible and styled', async ({ page, request }) => {
+        const idFunnel = await getOrCreateFunnelId(page, request);
         expect(idFunnel).toBeTruthy();
 
         // TEST
@@ -509,8 +517,8 @@ test.describe('FunnelInsights Controller - viewFunnel Dashboard Layout (v3.0.42)
         await expect(statBoxes).toHaveCount(3);
     });
 
-    test('viewFunnel: back and edit buttons are visible', async ({ page }) => {
-        const idFunnel = await getOrCreateFunnelId(page);
+    test('viewFunnel: back and edit buttons are visible', async ({ page, request }) => {
+        const idFunnel = await getOrCreateFunnelId(page, request);
         expect(idFunnel).toBeTruthy();
 
         // TEST
@@ -531,8 +539,8 @@ test.describe('FunnelInsights Controller - viewFunnel Dashboard Layout (v3.0.42)
         await expect(editButton).toHaveAttribute('href', new RegExp(`idFunnel=${idFunnel}`));
     });
 
-    test('viewFunnel: funnel steps section is displayed', async ({ page }) => {
-        const idFunnel = await getOrCreateFunnelId(page);
+    test('viewFunnel: funnel steps section is displayed', async ({ page, request }) => {
+        const idFunnel = await getOrCreateFunnelId(page, request);
         expect(idFunnel).toBeTruthy();
 
         // TEST
