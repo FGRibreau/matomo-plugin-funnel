@@ -1,4 +1,11 @@
-{% extends 'admin.twig' %}
+{% extends 'dashboard.twig' %}
+
+{% block topcontrols %}
+    {% include "@CoreHome/_siteSelectHeader.twig" %}
+    {% include "@CoreHome/_periodSelect.twig" %}
+    {{ postEvent("Template.nextToCalendar") }}
+    {% include "@CoreHome/_headerMessage.twig" %}
+{% endblock %}
 
 {% block content %}
 <div class="card">
