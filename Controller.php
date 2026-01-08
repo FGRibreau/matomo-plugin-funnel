@@ -41,10 +41,90 @@ class Controller extends ControllerAdmin
         $period = Common::getRequestVar('period', 'day', 'string');
         $date = Common::getRequestVar('date', 'yesterday', 'string');
 
+        // Get raw step data from API
+        $rawSteps = API::getInstance()->getFunnelReport($this->idSite, $period, $date, $idFunnel);
+
+        // Transform flat array into structured report for template
+        $funnelReport = $this->buildFunnelReportForTemplate($rawSteps);
+
         return $this->renderTemplate('@FunnelInsights/viewFunnel', [
             'funnel' => $funnel,
-            'funnelReport' => API::getInstance()->getFunnelReport($this->idSite, $period, $date, $idFunnel),
+            'funnelReport' => $funnelReport,
         ]);
+    }
+
+    /**
+     * Transform raw step data from API into structured report expected by viewFunnel template.
+     *
+     * @param array $rawSteps Flat array of step data from API::getFunnelReport()
+     * @return array Structured report with 'steps', 'total_entries', 'total_conversions', 'conversion_rate'
+     */
+    private function buildFunnelReportForTemplate(array $rawSteps): array
+    {
+        $report = [
+            'steps' => [],
+            'total_entries' => 0,
+            'total_conversions' => 0,
+            'conversion_rate' => 0,
+        ];
+
+        if (empty($rawSteps)) {
+            return $report;
+        }
+
+        // Process steps and calculate fill rates for visualization
+        $firstStepVisits = 0;
+        $stepCount = count($rawSteps);
+
+        foreach ($rawSteps as $index => $step) {
+            $visits = isset($step['visits']) ? (int)$step['visits'] : 0;
+            $entries = isset($step['entries']) ? (int)$step['entries'] : 0;
+
+            // First step: capture total entries
+            if ($index === 0) {
+                $report['total_entries'] = $entries > 0 ? $entries : $visits;
+                $firstStepVisits = $visits > 0 ? $visits : $entries;
+            }
+
+            // Last step: capture conversions
+            if ($index === $stepCount - 1) {
+                $report['total_conversions'] = $visits;
+            }
+
+            // Calculate fill rate (relative to first step for funnel visualization)
+            $fillRate = ($firstStepVisits > 0) ? ($visits / $firstStepVisits * 100) : 100;
+
+            // Calculate rate to next step
+            $rate = 0;
+            if ($index < $stepCount - 1 && isset($rawSteps[$index + 1])) {
+                $nextVisits = isset($rawSteps[$index + 1]['visits']) ? (int)$rawSteps[$index + 1]['visits'] : 0;
+                $rate = ($visits > 0) ? ($nextVisits / $visits * 100) : 0;
+            } elseif ($index === $stepCount - 1) {
+                $rate = 100; // Last step always 100%
+            }
+
+            // Calculate drop-off
+            $dropOff = 0;
+            if ($index < $stepCount - 1 && isset($rawSteps[$index + 1])) {
+                $nextVisits = isset($rawSteps[$index + 1]['visits']) ? (int)$rawSteps[$index + 1]['visits'] : 0;
+                $dropOff = $visits - $nextVisits;
+            }
+
+            $report['steps'][] = array_merge($step, [
+                'nb_visits' => $visits,
+                'fill_rate' => round($fillRate, 1),
+                'rate' => round($rate, 1),
+                'nb_drop_off' => max(0, $dropOff),
+                'step_name' => isset($step['label']) ? $step['label'] : 'Step ' . ($index + 1),
+            ]);
+        }
+
+        // Calculate overall conversion rate
+        if ($report['total_entries'] > 0) {
+            $report['conversion_rate'] = round($report['total_conversions'] / $report['total_entries'] * 100, 1);
+        }
+
+        return $report;
     }
 
     public function manage()
