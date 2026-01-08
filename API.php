@@ -261,16 +261,13 @@ class API extends \Piwik\Plugin\API
             $funnelArchives[$funnel['idfunnel']] = $archive->getDataTable('FunnelInsights_Funnel_' . $funnel['idfunnel']);
         }
 
-        // Create result Map, copying structure from template
+        // Create result Map with same key name as template
+        // NOTE: Map does NOT have getMetadata() - only DataTable does
+        // The period metadata lives on individual DataTables, not on the Map itself
         $resultMap = new Map();
         $resultMap->setKeyName($templateResult->getKeyName());
 
-        // Copy Map-level metadata from template (required for Row Evolution)
-        foreach ($templateResult->getMetadata() as $key => $value) {
-            $resultMap->setMetadata($key, $value);
-        }
-
-        // Build overview table for each date, preserving table-level metadata
+        // Build overview table for each date, copying period metadata from template tables
         foreach ($templateResult->getDataTables() as $dateKey => $templateTable) {
             $summaryTable = new DataTable();
 
