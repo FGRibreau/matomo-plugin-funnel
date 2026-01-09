@@ -222,12 +222,19 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
         await page.fill('input#name', funnelName);
 
         // Add a step using the Vue component
-        await page.click('.funnel-editor button:has-text("+ Add Step")');
-        await page.waitForSelector('.step-card');
+        const addButton = page.locator('.funnel-editor button:has-text("+ Add Step")');
+        await addButton.waitFor({ state: 'visible', timeout: 10000 });
+        await addButton.click();
+        await page.waitForSelector('.step-card .step-body', { timeout: 10000 });
+        await page.waitForTimeout(500);
 
-        const stepCard = page.locator('.step-card').first();
-        await stepCard.locator('input[placeholder="e.g. Landing Page"]').fill('Test Step');
-        await stepCard.locator('.condition-part.flex-grow input').fill('/test-url');
+        const stepNameInput = page.locator('.step-card input[placeholder="e.g. Landing Page"]').first();
+        await stepNameInput.waitFor({ state: 'visible', timeout: 5000 });
+        await stepNameInput.fill('Test Step');
+
+        const patternInput = page.locator('.step-card .inline-conditions input.form-control').first();
+        await patternInput.waitFor({ state: 'visible', timeout: 5000 });
+        await patternInput.fill('/test-url');
 
         // Submit the form
         await page.click('input[type="submit"].btn');
@@ -267,12 +274,20 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
         await page.waitForSelector('.funnel-editor', { timeout: 15000 });
 
         await page.fill('input#name', originalName);
-        await page.click('.funnel-editor button:has-text("+ Add Step")');
-        await page.waitForSelector('.step-card');
 
-        const stepCard = page.locator('.step-card').first();
-        await stepCard.locator('input[placeholder="e.g. Landing Page"]').fill('Source Step');
-        await stepCard.locator('.condition-part.flex-grow input').fill('/source');
+        const addButton = page.locator('.funnel-editor button:has-text("+ Add Step")');
+        await addButton.waitFor({ state: 'visible', timeout: 10000 });
+        await addButton.click();
+        await page.waitForSelector('.step-card .step-body', { timeout: 10000 });
+        await page.waitForTimeout(500);
+
+        const stepNameInput = page.locator('.step-card input[placeholder="e.g. Landing Page"]').first();
+        await stepNameInput.waitFor({ state: 'visible', timeout: 5000 });
+        await stepNameInput.fill('Source Step');
+
+        const patternInput = page.locator('.step-card .inline-conditions input.form-control').first();
+        await patternInput.waitFor({ state: 'visible', timeout: 5000 });
+        await patternInput.fill('/source');
 
         await page.click('input[type="submit"].btn');
         await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
@@ -307,12 +322,20 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
         await page.waitForSelector('.funnel-editor', { timeout: 15000 });
 
         await page.fill('input#name', deleteName);
-        await page.click('.funnel-editor button:has-text("+ Add Step")');
-        await page.waitForSelector('.step-card');
 
-        const stepCard = page.locator('.step-card').first();
-        await stepCard.locator('input[placeholder="e.g. Landing Page"]').fill('Delete Step');
-        await stepCard.locator('.condition-part.flex-grow input').fill('/delete');
+        const addButton = page.locator('.funnel-editor button:has-text("+ Add Step")');
+        await addButton.waitFor({ state: 'visible', timeout: 10000 });
+        await addButton.click();
+        await page.waitForSelector('.step-card .step-body', { timeout: 10000 });
+        await page.waitForTimeout(500);
+
+        const stepNameInput = page.locator('.step-card input[placeholder="e.g. Landing Page"]').first();
+        await stepNameInput.waitFor({ state: 'visible', timeout: 5000 });
+        await stepNameInput.fill('Delete Step');
+
+        const patternInput = page.locator('.step-card .inline-conditions input.form-control').first();
+        await patternInput.waitFor({ state: 'visible', timeout: 5000 });
+        await patternInput.fill('/delete');
 
         await page.click('input[type="submit"].btn');
         await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });

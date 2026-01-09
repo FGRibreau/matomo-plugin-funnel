@@ -28,19 +28,31 @@ export async function createTestFunnel(page, matomoUrl, idSite, name, options = 
     await page.locator('input#name').fill(name);
 
     // Add a step using the Vue component's add button
-    await page.locator('.funnel-editor button.add-step-btn, .funnel-editor button:has-text("+ Add Step")').click();
-    await page.waitForSelector('.step-card', { timeout: 5000 });
+    const addButton = page.locator('.funnel-editor button.add-step-btn, .funnel-editor button:has-text("+ Add Step")');
+    await addButton.waitFor({ state: 'visible', timeout: 10000 });
+    await addButton.click();
+
+    // Wait for step card to appear with all its inputs
+    await page.waitForSelector('.step-card .step-body', { timeout: 10000 });
+
+    // Wait a bit for Vue reactivity to complete
+    await page.waitForTimeout(500);
 
     // Fill step name (first input in step-card with the placeholder)
-    const stepCard = page.locator('.step-card').first();
-    await stepCard.locator('input[placeholder="e.g. Landing Page"]').fill(options.stepName || 'Homepage');
+    const stepNameInput = page.locator('.step-card input[placeholder="e.g. Landing Page"]').first();
+    await stepNameInput.waitFor({ state: 'visible', timeout: 5000 });
+    await stepNameInput.fill(options.stepName || 'Homepage');
 
-    // Select comparison type (the Vue component uses v-model on select)
-    const comparisonSelect = stepCard.locator('.condition-part select').first();
-    await comparisonSelect.selectOption(options.comparison || 'path');
+    // The comparison select is already set to 'path' by default, so we only need to change if different
+    if (options.comparison && options.comparison !== 'path') {
+        const comparisonSelect = page.locator('.step-card .inline-conditions select').first();
+        await comparisonSelect.waitFor({ state: 'visible', timeout: 5000 });
+        await comparisonSelect.selectOption(options.comparison);
+    }
 
-    // Fill pattern (input in the flex-grow condition-part)
-    const patternInput = stepCard.locator('.condition-part.flex-grow input');
+    // Fill pattern (the input inside inline-conditions, after the selects)
+    const patternInput = page.locator('.step-card .inline-conditions input.form-control').first();
+    await patternInput.waitFor({ state: 'visible', timeout: 5000 });
     await patternInput.fill(options.pattern || '/');
 
     // Activate the funnel (unless explicitly disabled)
