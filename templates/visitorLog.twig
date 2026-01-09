@@ -1,0 +1,115 @@
+{% extends 'dashboard.twig' %}
+
+{% block topcontrols %}
+    {% include "@CoreHome/_siteSelectHeader.twig" %}
+    {% include "@CoreHome/_periodSelect.twig" %}
+    {{ postEvent("Template.nextToCalendar") }}
+    {% include "@CoreHome/_headerMessage.twig" %}
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-content">
+        <h2 class="card-title" data-test="visitor-log-title">
+            {{ 'FunnelInsights_VisitorLog'|translate }} - {{ funnel.name }}
+            {% if stepIndex is not null %}
+                <span style="font-size: 14px; font-weight: normal; color: #666;">
+                    ({{ 'FunnelInsights_FilteredByStep'|translate }} {{ stepIndex + 1 }}: {{ visitorLog.funnel_steps[stepIndex]|default('Step ' ~ (stepIndex + 1)) }})
+                </span>
+            {% endif %}
+        </h2>
+
+        <div style="margin-bottom: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
+            <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'viewFunnel', 'idFunnel': funnel.idfunnel}) }}" class="btn btn-flat" data-test="visitor-log-back-button">
+                <span class="icon-arrow-left"></span> {{ 'FunnelInsights_BackToFunnel'|translate }}
+            </a>
+            {% if stepIndex is not null %}
+                <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'visitorLog', 'idFunnel': funnel.idfunnel}) }}" class="btn btn-flat" data-test="visitor-log-show-all-button">
+                    {{ 'FunnelInsights_ShowAllVisitors'|translate }}
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="funnel-steps-legend" style="margin-bottom: 16px; padding: 12px; background: #f5f5f5; border-radius: 8px;" data-test="funnel-steps-legend">
+            <strong>{{ 'FunnelInsights_FunnelSteps'|translate }}:</strong>
+            {% for stepName in visitorLog.funnel_steps %}
+                <span style="display: inline-block; margin: 4px 8px 4px 0; padding: 4px 8px; background: #e0e0e0; border-radius: 4px; font-size: 12px;">
+                    {{ loop.index }}. {{ stepName }}
+                </span>
+            {% endfor %}
+        </div>
+
+        {% if visitorLog.visitors|length > 0 %}
+            <table class="entityTable dataTable" data-test="visitor-log-table">
+                <thead>
+                    <tr>
+                        <th>{{ 'FunnelInsights_VisitTime'|translate }}</th>
+                        <th>{{ 'FunnelInsights_Referrer'|translate }}</th>
+                        <th>{{ 'FunnelInsights_StepsCompleted'|translate }}</th>
+                        <th>{{ 'FunnelInsights_EntryStep'|translate }}</th>
+                        <th>{{ 'FunnelInsights_ExitStep'|translate }}</th>
+                        <th>{{ 'FunnelInsights_Converted'|translate }}</th>
+                        <th>{{ 'FunnelInsights_Duration'|translate }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for visitor in visitorLog.visitors %}
+                    <tr data-test="visitor-log-row-{{ loop.index0 }}">
+                        <td>
+                            <span style="font-family: monospace;">{{ visitor.visit_time }}</span>
+                        </td>
+                        <td>
+                            {% if visitor.referer_name %}
+                                <span title="{{ visitor.referer_url }}">{{ visitor.referer_name }}</span>
+                            {% else %}
+                                <span style="color: #999;">{{ 'FunnelInsights_DirectEntry'|translate }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                {% for step in visitor.steps_hit %}
+                                    <span style="display: inline-block; padding: 2px 6px; background: #4caf50; color: white; border-radius: 3px; font-size: 11px;" title="{{ step.step_name }}">
+                                        {{ step.step_index + 1 }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                            <span style="font-size: 11px; color: #666;">
+                                {{ visitor.steps_completed }}/{{ visitor.total_steps }} {{ 'FunnelInsights_Steps'|translate }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="step-number-badge" style="display: inline-block; width: 24px; height: 24px; background: #2196f3; color: white; border-radius: 50%; text-align: center; line-height: 24px; font-size: 12px; font-weight: bold;">
+                                {{ visitor.entry_step + 1 }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="step-number-badge" style="display: inline-block; width: 24px; height: 24px; background: {% if visitor.converted %}#4caf50{% else %}#f44336{% endif %}; color: white; border-radius: 50%; text-align: center; line-height: 24px; font-size: 12px; font-weight: bold;">
+                                {{ visitor.exit_step + 1 }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if visitor.converted %}
+                                <span style="color: #4caf50; font-weight: bold;"><span class="icon-ok"></span> {{ 'General_Yes'|translate }}</span>
+                            {% else %}
+                                <span style="color: #999;"><span class="icon-close"></span> {{ 'General_No'|translate }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ visitor.visit_duration }}s
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div style="margin-top: 16px; color: #666; font-size: 13px;">
+                {{ 'FunnelInsights_ShowingVisitors'|translate }}: {{ visitorLog.total }}
+            </div>
+        {% else %}
+            <div class="notification system notification-info" data-test="visitor-log-no-data">
+                {{ 'FunnelInsights_NoVisitorsForPeriod'|translate }}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

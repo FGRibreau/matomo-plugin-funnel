@@ -237,4 +237,85 @@ class Controller extends ControllerAdmin
 
         $this->redirectToIndex('FunnelInsights', 'manage');
     }
+
+    /**
+     * Display visitor log for funnel participants
+     */
+    public function visitorLog()
+    {
+        Piwik::checkUserHasViewAccess($this->idSite);
+
+        $idFunnel = Common::getRequestVar('idFunnel', 0, 'int');
+        $stepIndex = Common::getRequestVar('stepIndex', null, 'int');
+
+        if ($idFunnel <= 0) {
+            $this->redirectToIndex('FunnelInsights', 'index');
+            return;
+        }
+
+        $funnel = API::getInstance()->getFunnel($this->idSite, $idFunnel);
+
+        if (!$funnel) {
+            $this->redirectToIndex('FunnelInsights', 'index');
+            return;
+        }
+
+        $period = Common::getRequestVar('period', 'day', 'string');
+        $date = Common::getRequestVar('date', 'yesterday', 'string');
+
+        $visitorLogData = API::getInstance()->getVisitorLog(
+            $this->idSite,
+            $period,
+            $date,
+            $idFunnel,
+            $stepIndex,
+            50,
+            0
+        );
+
+        $view = new View('@FunnelInsights/visitorLog');
+        $this->setBasicVariablesView($view);
+        $this->setGeneralVariablesView($view);
+        $view->showMenu = true;
+
+        $view->funnel = $funnel;
+        $view->stepIndex = $stepIndex;
+        $view->visitorLog = $visitorLogData;
+
+        return $view->render();
+    }
+
+    /**
+     * AJAX endpoint for step evolution popup
+     */
+    public function getStepEvolution()
+    {
+        $idSite = Common::getRequestVar('idSite', 0, 'int');
+        Piwik::checkUserHasViewAccess($idSite);
+
+        $idFunnel = Common::getRequestVar('idFunnel', 0, 'int');
+        $stepIndex = Common::getRequestVar('stepIndex', 0, 'int');
+        $period = Common::getRequestVar('period', 'day', 'string');
+        $date = Common::getRequestVar('date', 'last30', 'string');
+
+        $data = API::getInstance()->getStepEvolution($idSite, $period, $date, $idFunnel, $stepIndex);
+
+        // Convert DataTable\Map to array for JSON response
+        $result = [];
+        if ($data instanceof \Piwik\DataTable\Map) {
+            foreach ($data->getDataTables() as $dateKey => $table) {
+                $row = $table->getFirstRow();
+                if ($row) {
+                    $result[] = array_merge(
+                        ['date' => $dateKey],
+                        $row->getColumns()
+                    );
+                }
+            }
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($result);
+        exit;
+    }
 }

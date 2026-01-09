@@ -91,6 +91,21 @@
         "OperatorContains": "contains",
         "OperatorStartsWith": "starts with",
         "OperatorEndsWith": "ends with",
-        "OperatorRegex": "matches regex"
+        "OperatorRegex": "matches regex",
+        "VisitorLog": "Visitor Log",
+        "FilteredByStep": "Filtered by Step",
+        "BackToFunnel": "Back to Funnel",
+        "ShowAllVisitors": "Show All Visitors",
+        "FunnelSteps": "Funnel Steps",
+        "VisitTime": "Visit Time",
+        "Referrer": "Referrer",
+        "StepsCompleted": "Steps Completed",
+        "EntryStep": "Entry Step",
+        "ExitStep": "Exit Step",
+        "Converted": "Converted",
+        "Duration": "Duration",
+        "DirectEntry": "Direct Entry",
+        "ShowingVisitors": "Showing visitors",
+        "NoVisitorsForPeriod": "No visitors found for the selected period that matched the funnel steps."
     }
 }

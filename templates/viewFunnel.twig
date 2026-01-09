@@ -210,9 +210,12 @@
 </div>
 
 <div class="card">
-    <div class="card-content" style="display: flex; gap: 12px;">
+    <div class="card-content" style="display: flex; gap: 12px; flex-wrap: wrap;">
         <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'index'}) }}" class="btn btn-flat" data-test="funnel-back-button">
             <span class="icon-arrow-left"></span> {{ 'FunnelInsights_BackToFunnels'|translate }}
+        </a>
+        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'visitorLog', 'idFunnel': funnel.idfunnel}) }}" class="btn" data-test="funnel-visitor-log-button">
+            <span class="icon-visitor"></span> {{ 'FunnelInsights_VisitorLog'|translate }}
         </a>
         <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'edit', 'idFunnel': funnel.idfunnel}) }}" class="btn" data-test="funnel-view-edit-button">
             <span class="icon-edit"></span> {{ 'FunnelInsights_EditFunnel'|translate }}

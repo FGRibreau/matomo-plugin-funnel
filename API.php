@@ -410,27 +410,305 @@ class API extends \Piwik\Plugin\API
     public function getSuggestedValues($idSite, $type)
     {
         Piwik::checkUserHasAdminAccess($idSite);
-        
+
         $idActionType = 1; // Default URL
         if ($type === 'page_title') $idActionType = 2;
         elseif ($type === 'event_category') $idActionType = 10;
         elseif ($type === 'event_action') $idActionType = 11;
         elseif ($type === 'event_name') $idActionType = 12;
-        
+
         // Limit to last 50 distinct values
-        $sql = "SELECT name 
-                FROM " . \Piwik\Common::prefixTable('log_action') . " 
-                WHERE type = ? 
-                ORDER BY idaction DESC 
+        $sql = "SELECT name
+                FROM " . \Piwik\Common::prefixTable('log_action') . "
+                WHERE type = ?
+                ORDER BY idaction DESC
                 LIMIT 50";
-        
+
         $rows = \Piwik\Db::get()->fetchAll($sql, array($idActionType));
-        
+
         $values = array();
         foreach ($rows as $row) {
             $values[] = $row['name'];
         }
-        
+
         return array_unique($values);
+    }
+
+    /**
+     * Returns evolution data for a specific step in a funnel.
+     * Enables Row Evolution popup for individual funnel steps.
+     *
+     * @param int $idSite
+     * @param string $period
+     * @param string $date
+     * @param int $idFunnel
+     * @param int $stepIndex The 0-based index of the step
+     * @return Map
+     */
+    public function getStepEvolution($idSite, $period, $date, $idFunnel, $stepIndex)
+    {
+        Piwik::checkUserHasViewAccess($idSite);
+
+        $archive = Archive::build($idSite, $period, $date);
+        $result = $archive->getDataTable('FunnelInsights_Funnel_' . $idFunnel);
+
+        $resultMap = new Map();
+        $resultMap->setKeyName('date');
+
+        // For single date, wrap in Map
+        if ($result instanceof DataTable) {
+            $stepTable = $this->extractStepRow($result, $stepIndex);
+            $resultMap->addTable($stepTable, $date);
+            return $resultMap;
+        }
+
+        // For date ranges
+        if ($result instanceof Map) {
+            foreach ($result->getDataTables() as $dateKey => $table) {
+                $stepTable = $this->extractStepRow($table, $stepIndex);
+                // Copy period metadata
+                if ($table instanceof DataTable) {
+                    foreach ($table->getAllTableMetadata() as $metaKey => $metaValue) {
+                        $stepTable->setMetadata($metaKey, $metaValue);
+                    }
+                }
+                $resultMap->addTable($stepTable, $dateKey);
+            }
+            return $resultMap;
+        }
+
+        return $resultMap;
+    }
+
+    /**
+     * Extract a single step's data as a DataTable with one row.
+     */
+    private function extractStepRow(DataTable $table, $stepIndex): DataTable
+    {
+        $stepTable = new DataTable();
+        $rows = $table->getRows();
+
+        if (isset($rows[$stepIndex])) {
+            $row = $rows[$stepIndex];
+            $stepTable->addRowsFromSimpleArray(array($row->getColumns()));
+        }
+
+        return $stepTable;
+    }
+
+    /**
+     * Returns sparkline data for a specific funnel or overview.
+     * Returns conversion rate trends over time for mini-graphs.
+     *
+     * @param int $idSite
+     * @param string $period
+     * @param string $date
+     * @param int|null $idFunnel If null, returns data for all active funnels
+     * @param string $metric The metric to return: 'conversion_rate', 'entries', 'conversions'
+     * @return array
+     */
+    public function getSparklineData($idSite, $period, $date, $idFunnel = null, $metric = 'conversion_rate')
+    {
+        Piwik::checkUserHasViewAccess($idSite);
+
+        if ($idFunnel) {
+            // Single funnel sparkline
+            return $this->getFunnelSparkline($idSite, $period, $date, $idFunnel, $metric);
+        }
+
+        // All active funnels sparklines
+        $funnels = $this->dao->getAllForSite($idSite);
+        $activeFunnels = array_filter($funnels, function($f) { return $f['active']; });
+
+        $result = array();
+        foreach ($activeFunnels as $funnel) {
+            $result[$funnel['idfunnel']] = array(
+                'name' => $funnel['name'],
+                'data' => $this->getFunnelSparkline($idSite, $period, $date, $funnel['idfunnel'], $metric)
+            );
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get sparkline data for a single funnel.
+     */
+    private function getFunnelSparkline($idSite, $period, $date, $idFunnel, $metric): array
+    {
+        $archive = Archive::build($idSite, $period, $date);
+        $result = $archive->getDataTable('FunnelInsights_Funnel_' . $idFunnel);
+
+        $sparklineData = array();
+
+        if ($result instanceof Map) {
+            foreach ($result->getDataTables() as $dateKey => $table) {
+                $value = $this->extractMetricValue($table, $metric);
+                $sparklineData[] = array(
+                    'date' => $dateKey,
+                    'value' => $value
+                );
+            }
+        } elseif ($result instanceof DataTable) {
+            $value = $this->extractMetricValue($result, $metric);
+            $sparklineData[] = array(
+                'date' => $date,
+                'value' => $value
+            );
+        }
+
+        return $sparklineData;
+    }
+
+    /**
+     * Extract a metric value from a funnel DataTable.
+     */
+    private function extractMetricValue(DataTable $table, $metric)
+    {
+        if ($table->getRowsCount() === 0) {
+            return 0;
+        }
+
+        $firstRow = $table->getFirstRow();
+        $lastRow = $table->getLastRow();
+
+        $entries = $firstRow ? ($firstRow->getColumn('entries') ?: 0) : 0;
+        $conversions = $lastRow ? ($lastRow->getColumn('visits') ?: 0) : 0;
+
+        switch ($metric) {
+            case 'entries':
+                return $entries;
+            case 'conversions':
+                return $conversions;
+            case 'conversion_rate':
+            default:
+                return ($entries > 0) ? round($conversions / $entries * 100, 1) : 0;
+        }
+    }
+
+    /**
+     * Returns visitor log data for visitors who participated in a funnel.
+     * Filters visitors to only those who hit funnel steps.
+     *
+     * @param int $idSite
+     * @param string $period
+     * @param string $date
+     * @param int $idFunnel
+     * @param int|null $stepIndex If provided, filter to visitors who hit this specific step
+     * @param int $limit
+     * @param int $offset
+     * @return array
+     */
+    public function getVisitorLog($idSite, $period, $date, $idFunnel, $stepIndex = null, $limit = 50, $offset = 0)
+    {
+        Piwik::checkUserHasViewAccess($idSite);
+
+        $funnel = $this->getFunnel($idSite, $idFunnel);
+        if (!$funnel) {
+            throw new \Exception("Funnel not found.");
+        }
+
+        $steps = $funnel['steps'];
+        $matcher = new \Piwik\Plugins\FunnelInsights\Model\StepMatcher();
+
+        // Build SQL to find visits that match funnel patterns
+        $logVisit = \Piwik\Common::prefixTable('log_visit');
+        $logAction = \Piwik\Common::prefixTable('log_link_visit_action');
+        $logActionTable = \Piwik\Common::prefixTable('log_action');
+
+        // Get date range for period
+        $periodObj = \Piwik\Period\Factory::build($period, $date);
+        $startDate = $periodObj->getDateStart()->toString('Y-m-d');
+        $endDate = $periodObj->getDateEnd()->toString('Y-m-d 23:59:59');
+
+        // Get visits in the period
+        $sql = "SELECT DISTINCT v.idvisit, v.idvisitor, v.visit_first_action_time,
+                       v.visit_last_action_time, v.referer_url, v.referer_name,
+                       v.visit_total_actions, v.visit_total_time
+                FROM $logVisit v
+                INNER JOIN $logAction la ON la.idvisit = v.idvisit
+                WHERE v.idsite = ?
+                  AND v.visit_first_action_time >= ?
+                  AND v.visit_first_action_time <= ?
+                ORDER BY v.visit_first_action_time DESC
+                LIMIT ? OFFSET ?";
+
+        $visits = \Piwik\Db::get()->fetchAll($sql, array($idSite, $startDate, $endDate, $limit, $offset));
+
+        $result = array();
+        foreach ($visits as $visit) {
+            // Get actions for this visit
+            $actionSql = "SELECT la.server_time, a.name as url,
+                                 COALESCE(t.name, '') as page_title
+                          FROM $logAction la
+                          LEFT JOIN $logActionTable a ON la.idaction_url = a.idaction
+                          LEFT JOIN $logActionTable t ON la.idaction_name = t.idaction
+                          WHERE la.idvisit = ?
+                          ORDER BY la.server_time ASC";
+
+            $actions = \Piwik\Db::get()->fetchAll($actionSql, array($visit['idvisit']));
+
+            // Check which steps were hit
+            $stepsHit = array();
+            foreach ($actions as $action) {
+                $hit = array(
+                    'url' => $action['url'] ?: '',
+                    'pageTitle' => $action['page_title'] ?: '',
+                    'eventCategory' => '',
+                    'eventAction' => '',
+                    'eventName' => '',
+                    'search_term' => ''
+                );
+
+                foreach ($steps as $idx => $step) {
+                    if (!isset($stepsHit[$idx]) && $matcher->match($step, $hit)) {
+                        $stepsHit[$idx] = array(
+                            'step_index' => $idx,
+                            'step_name' => $step['name'],
+                            'timestamp' => $action['server_time'],
+                            'url' => $action['url']
+                        );
+                    }
+                }
+            }
+
+            // Filter by step if requested
+            if ($stepIndex !== null && !isset($stepsHit[$stepIndex])) {
+                continue;
+            }
+
+            // Only include visits that hit at least one step
+            if (empty($stepsHit)) {
+                continue;
+            }
+
+            ksort($stepsHit);
+            $entry = count($stepsHit) > 0 ? min(array_keys($stepsHit)) : null;
+            $exit = count($stepsHit) > 0 ? max(array_keys($stepsHit)) : null;
+            $completed = count($stepsHit);
+
+            $result[] = array(
+                'idvisit' => $visit['idvisit'],
+                'idvisitor' => bin2hex($visit['idvisitor']),
+                'visit_time' => $visit['visit_first_action_time'],
+                'visit_duration' => $visit['visit_total_time'],
+                'total_actions' => $visit['visit_total_actions'],
+                'referer_url' => $visit['referer_url'],
+                'referer_name' => $visit['referer_name'],
+                'steps_hit' => array_values($stepsHit),
+                'entry_step' => $entry,
+                'exit_step' => $exit,
+                'steps_completed' => $completed,
+                'total_steps' => count($steps),
+                'converted' => $exit === count($steps) - 1
+            );
+        }
+
+        return array(
+            'visitors' => $result,
+            'total' => count($result),
+            'funnel_name' => $funnel['name'],
+            'funnel_steps' => array_map(function($s) { return $s['name']; }, $steps)
+        );
     }
 }
