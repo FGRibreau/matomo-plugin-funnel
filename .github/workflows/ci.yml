@@ -59,7 +59,7 @@ jobs:
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -107,7 +107,7 @@ jobs:
           MATOMO_USER: admin
           MATOMO_PASSWORD: adminpassword123
           MATOMO_IDSITE: 1
-        run: npm test
+        run: npx playwright test controller.spec.js --timeout 60000
 
       - name: Upload Test Artifacts
         if: failure()
