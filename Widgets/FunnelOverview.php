@@ -59,8 +59,17 @@ class FunnelOverview extends Widget
             }
         }
 
+        // Fetch sparkline data for the last 7 days
+        $sparklineData = [];
+        $sparklineDate = 'last7';
+        $sparklineResult = $api->getSparklineData($idSite, 'day', $sparklineDate, null, 'conversion_rate');
+        if (is_array($sparklineResult)) {
+            $sparklineData = $sparklineResult;
+        }
+
         return $this->renderTemplate('@FunnelInsights/widgetOverview', [
             'overviewData' => $overviewData,
+            'sparklineData' => $sparklineData,
             'idSite' => $idSite,
             'period' => $period,
             'date' => $date,

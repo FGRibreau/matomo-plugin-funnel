@@ -8,6 +8,93 @@
 {% endblock %}
 
 {% block content %}
+<!-- Step Evolution Modal -->
+<div id="stepEvolutionModal" class="step-evolution-modal" style="display: none;" data-test="step-evolution-modal">
+    <div class="step-evolution-modal-content">
+        <div class="step-evolution-modal-header">
+            <h3 data-test="step-evolution-title">{{ 'FunnelInsights_Evolution'|translate }}: <span id="stepEvolutionStepName"></span></h3>
+            <button type="button" class="step-evolution-close" data-test="step-evolution-close">&times;</button>
+        </div>
+        <div class="step-evolution-modal-body" data-test="step-evolution-body">
+            <div id="stepEvolutionLoading" style="text-align: center; padding: 40px;">
+                <span class="icon-loading"></span> Loading...
+            </div>
+            <div id="stepEvolutionContent" style="display: none;">
+                <table class="dataTable entityTable" id="stepEvolutionTable" data-test="step-evolution-table">
+                    <thead>
+                        <tr>
+                            <th>{{ 'General_Date'|translate }}</th>
+                            <th>{{ 'FunnelInsights_Visits'|translate }}</th>
+                            <th>{{ 'FunnelInsights_Proceeded'|translate }}</th>
+                            <th>{{ 'FunnelInsights_DropOff'|translate }}</th>
+                            <th>{{ 'FunnelInsights_ConversionRate'|translate }}</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stepEvolutionTableBody"></tbody>
+                </table>
+                <div id="stepEvolutionChart" style="margin-top: 20px; height: 200px;" data-test="step-evolution-chart"></div>
+            </div>
+            <div id="stepEvolutionError" style="display: none; color: #f44336; padding: 20px; text-align: center;" data-test="step-evolution-error"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .step-evolution-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .step-evolution-modal-content {
+        background: white;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow: auto;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    .step-evolution-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .step-evolution-modal-header h3 {
+        margin: 0;
+        font-size: 18px;
+    }
+    .step-evolution-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+        padding: 0;
+        line-height: 1;
+    }
+    .step-evolution-close:hover {
+        color: #333;
+    }
+    .step-evolution-modal-body {
+        padding: 20px;
+    }
+    .funnel-bar.clickable {
+        cursor: pointer;
+    }
+    .funnel-bar.clickable:hover {
+        transform: scale(1.05);
+    }
+</style>
+
 <div class="card">
     <div class="card-content">
         <h2 class="card-title">{{ funnel.name }}</h2>
@@ -170,7 +257,12 @@
                         </div>
 
                         <div class="funnel-step-center">
-                            <div class="funnel-bar" style="width: {{ barWidth }}%;">
+                            <div class="funnel-bar clickable"
+                                 style="width: {{ barWidth }}%;"
+                                 data-step-index="{{ loop.index0 }}"
+                                 data-step-name="{{ step.name|default(step.step_name|default('Step ' ~ loop.index)) }}"
+                                 data-test="funnel-bar-{{ loop.index }}"
+                                 title="{{ 'FunnelInsights_Evolution'|translate }}">
                                 {{ step.nb_visits|default(0)|number_format }}
                             </div>
                         </div>
@@ -222,4 +314,142 @@
         </a>
     </div>
 </div>
+
+<script>
+(function() {
+    var idSite = {{ idSite }};
+    var idFunnel = {{ funnel.idfunnel }};
+    var period = '{{ period }}';
+    var date = '{{ date }}';
+
+    var modal = document.getElementById('stepEvolutionModal');
+    var closeBtn = modal.querySelector('.step-evolution-close');
+    var loadingEl = document.getElementById('stepEvolutionLoading');
+    var contentEl = document.getElementById('stepEvolutionContent');
+    var errorEl = document.getElementById('stepEvolutionError');
+    var tableBody = document.getElementById('stepEvolutionTableBody');
+    var stepNameEl = document.getElementById('stepEvolutionStepName');
+    var chartEl = document.getElementById('stepEvolutionChart');
+
+    function showModal(stepIndex, stepName) {
+        stepNameEl.textContent = stepName;
+        loadingEl.style.display = 'block';
+        contentEl.style.display = 'none';
+        errorEl.style.display = 'none';
+        modal.style.display = 'flex';
+
+        var url = 'index.php?module=FunnelInsights&action=getStepEvolution' +
+            '&idSite=' + idSite +
+            '&idFunnel=' + idFunnel +
+            '&stepIndex=' + stepIndex +
+            '&period=day&date=last30';
+
+        fetch(url, { credentials: 'same-origin' })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                loadingEl.style.display = 'none';
+
+                if (data.error) {
+                    errorEl.textContent = data.error;
+                    errorEl.style.display = 'block';
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    errorEl.textContent = '{{ 'FunnelInsights_NoDataForPeriod'|translate }}';
+                    errorEl.style.display = 'block';
+                    return;
+                }
+
+                // Populate table
+                tableBody.innerHTML = '';
+                data.forEach(function(row) {
+                    var tr = document.createElement('tr');
+                    tr.innerHTML =
+                        '<td>' + row.date + '</td>' +
+                        '<td>' + (row.nb_visits || 0).toLocaleString() + '</td>' +
+                        '<td>' + (row.nb_proceeded || 0).toLocaleString() + '</td>' +
+                        '<td>' + (row.nb_drop_off || 0).toLocaleString() + '</td>' +
+                        '<td>' + (row.rate || 0).toFixed(1) + '%</td>';
+                    tableBody.appendChild(tr);
+                });
+
+                // Draw simple SVG chart
+                drawChart(data);
+                contentEl.style.display = 'block';
+            })
+            .catch(function(err) {
+                loadingEl.style.display = 'none';
+                errorEl.textContent = 'Error loading data: ' + err.message;
+                errorEl.style.display = 'block';
+            });
+    }
+
+    function drawChart(data) {
+        if (data.length < 2) {
+            chartEl.innerHTML = '';
+            return;
+        }
+
+        var values = data.map(function(d) { return d.nb_visits || 0; });
+        var maxVal = Math.max.apply(null, values);
+        var minVal = Math.min.apply(null, values);
+        var range = maxVal - minVal || 1;
+
+        var width = chartEl.offsetWidth || 700;
+        var height = 180;
+        var padding = 20;
+
+        var points = data.map(function(d, i) {
+            var x = padding + (i / (data.length - 1)) * (width - 2 * padding);
+            var y = height - padding - ((d.nb_visits || 0) - minVal) / range * (height - 2 * padding);
+            return x + ',' + y;
+        });
+
+        var areaPoints = padding + ',' + (height - padding) + ' ' + points.join(' ') + ' ' + (width - padding) + ',' + (height - padding);
+
+        chartEl.innerHTML =
+            '<svg width="100%" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '" preserveAspectRatio="none">' +
+                '<polyline fill="rgba(33, 150, 243, 0.1)" stroke="none" points="' + areaPoints + '"/>' +
+                '<polyline fill="none" stroke="#2196f3" stroke-width="2" points="' + points.join(' ') + '"/>' +
+            '</svg>' +
+            '<div style="display: flex; justify-content: space-between; font-size: 11px; color: #999;">' +
+                '<span>' + data[0].date + '</span>' +
+                '<span>' + data[data.length - 1].date + '</span>' +
+            '</div>';
+    }
+
+    function hideModal() {
+        modal.style.display = 'none';
+    }
+
+    // Attach click handlers to funnel bars
+    document.querySelectorAll('.funnel-bar.clickable').forEach(function(bar) {
+        bar.addEventListener('click', function() {
+            var stepIndex = parseInt(this.getAttribute('data-step-index'), 10);
+            var stepName = this.getAttribute('data-step-name');
+            showModal(stepIndex, stepName);
+        });
+    });
+
+    // Close modal on X click
+    closeBtn.addEventListener('click', hideModal);
+
+    // Close modal on overlay click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            hideModal();
+        }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.style.display === 'flex') {
+            hideModal();
+        }
+    });
+})();
+</script>
 {% endblock %}

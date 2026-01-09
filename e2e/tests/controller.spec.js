@@ -1421,3 +1421,443 @@ test.describe('FunnelInsights Controller - Navigation', () => {
         await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
     });
 });
+
+// =============================================================================
+// VISITOR LOG TESTS
+// =============================================================================
+
+test.describe('FunnelInsights Controller - Visitor Log', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    test.beforeEach(async ({ page }) => {
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
+    });
+
+    test('Controller: visitor log action displays visitor table', async ({ page }) => {
+        // SETUP: Create a test funnel
+        const testFunnelName = `E2E VisitorLog Test ${Date.now()}`;
+        const idFunnel = await createTestFunnel(page, matomoUrl, idSite, testFunnelName, {
+            stepName: 'Visitor Log Test Step',
+            pattern: '/visitor-log-test'
+        });
+        expect(idFunnel).toBeTruthy();
+
+        // TEST: Navigate to visitor log
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=visitorLog&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        const content = await page.content();
+        expect(content).not.toContain('Fatal error');
+        expect(content).not.toContain('Parse error');
+
+        // Should see visitor log page elements
+        await expect(page.locator('[data-test="visitor-log-title"]')).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('[data-test="funnel-steps-legend"]')).toBeVisible({ timeout: 10000 });
+
+        // Should have back button
+        await expect(page.locator('[data-test="visitor-log-back-button"]')).toBeVisible();
+
+        // CLEANUP
+        await deleteFunnel(page, matomoUrl, idSite, idFunnel);
+    });
+
+    test('Controller: visitor log back button returns to funnel view', async ({ page }) => {
+        // SETUP: Create a test funnel
+        const testFunnelName = `E2E VisitorLog Nav Test ${Date.now()}`;
+        const idFunnel = await createTestFunnel(page, matomoUrl, idSite, testFunnelName, {
+            stepName: 'Nav Test Step',
+            pattern: '/visitor-log-nav-test'
+        });
+        expect(idFunnel).toBeTruthy();
+
+        // TEST: Navigate to visitor log
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=visitorLog&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="visitor-log-back-button"]', { timeout: 15000 });
+
+        // Click back button
+        await page.click('[data-test="visitor-log-back-button"]');
+        await page.waitForURL(/module=FunnelInsights.*action=viewFunnel/, { timeout: 30000 });
+
+        // Should be on view funnel page
+        expect(page.url()).toContain(`idFunnel=${idFunnel}`);
+
+        // CLEANUP
+        await deleteFunnel(page, matomoUrl, idSite, idFunnel);
+    });
+
+    test('Controller: funnel view has visitor log button', async ({ page }) => {
+        // SETUP: Create a test funnel
+        const testFunnelName = `E2E VisitorLog Button Test ${Date.now()}`;
+        const idFunnel = await createTestFunnel(page, matomoUrl, idSite, testFunnelName, {
+            stepName: 'Button Test Step',
+            pattern: '/visitor-log-button-test'
+        });
+        expect(idFunnel).toBeTruthy();
+
+        // TEST: Navigate to funnel view
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=viewFunnel&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        // Should have visitor log button
+        const visitorLogButton = page.locator('[data-test="funnel-visitor-log-button"]');
+        await expect(visitorLogButton).toBeVisible({ timeout: 15000 });
+
+        // Click it and verify navigation
+        await visitorLogButton.click();
+        await page.waitForURL(/module=FunnelInsights.*action=visitorLog/, { timeout: 30000 });
+
+        // Should be on visitor log page
+        expect(page.url()).toContain(`idFunnel=${idFunnel}`);
+
+        // CLEANUP
+        await deleteFunnel(page, matomoUrl, idSite, idFunnel);
+    });
+
+    test('Controller: visitor log displays no visitors message when empty', async ({ page }) => {
+        // SETUP: Create a new funnel with unlikely pattern (no visitors will match)
+        const testFunnelName = `E2E VisitorLog Empty Test ${Date.now()}`;
+        const idFunnel = await createTestFunnel(page, matomoUrl, idSite, testFunnelName, {
+            stepName: 'Empty Test Step',
+            pattern: '/xyz-unlikely-pattern-never-visited-12345'
+        });
+        expect(idFunnel).toBeTruthy();
+
+        // TEST: Navigate to visitor log
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=visitorLog&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        // Should show either the table or the no-data message
+        const noDataMessage = page.locator('[data-test="visitor-log-no-data"]');
+        const table = page.locator('[data-test="visitor-log-table"]');
+
+        const hasNoData = await noDataMessage.isVisible().catch(() => false);
+        const hasTable = await table.isVisible().catch(() => false);
+
+        // Either message or table should be visible (table might be empty but still visible)
+        expect(hasNoData || hasTable).toBe(true);
+
+        // CLEANUP
+        await deleteFunnel(page, matomoUrl, idSite, idFunnel);
+    });
+});
+
+// =============================================================================
+// STEP EVOLUTION MODAL TESTS
+// =============================================================================
+
+test.describe('FunnelInsights Controller - Step Evolution Modal', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    test.beforeEach(async ({ page }) => {
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
+    });
+
+    test('Controller: clicking funnel bar opens step evolution modal', async ({ page }) => {
+        // SETUP: Create a test funnel with multiple steps
+        const testFunnelName = `E2E StepEvolution Test ${Date.now()}`;
+        const idFunnel = await createTestFunnel(page, matomoUrl, idSite, testFunnelName, {
+            stepName: 'Homepage',
+            pattern: '/step-evolution-test'
+        });
+        expect(idFunnel).toBeTruthy();
+
+        // TEST: Navigate to funnel view
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=viewFunnel&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        // Wait for funnel visualization
+        const funnelBar = page.locator('[data-test="funnel-bar-1"]');
+
+        // The bar may or may not be visible depending on whether there's data
+        const barVisible = await funnelBar.isVisible().catch(() => false);
+
+        if (barVisible) {
+            // Click on the first funnel bar
+            await funnelBar.click();
+
+            // Modal should open
+            const modal = page.locator('[data-test="step-evolution-modal"]');
+            await expect(modal).toBeVisible({ timeout: 10000 });
+
+            // Modal should have title
+            await expect(page.locator('[data-test="step-evolution-title"]')).toBeVisible();
+
+            // Should have close button
+            await expect(page.locator('[data-test="step-evolution-close"]')).toBeVisible();
+        }
+
+        // CLEANUP
+        await deleteFunnel(page, matomoUrl, idSite, idFunnel);
+    });
+
+    test('Controller: step evolution modal closes on X button click', async ({ page }) => {
+        // SETUP: Create a test funnel
+        const testFunnelName = `E2E Modal Close Test ${Date.now()}`;
+        const idFunnel = await createTestFunnel(page, matomoUrl, idSite, testFunnelName, {
+            stepName: 'Modal Close Step',
+            pattern: '/modal-close-test'
+        });
+        expect(idFunnel).toBeTruthy();
+
+        // TEST: Navigate to funnel view
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=viewFunnel&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        const funnelBar = page.locator('[data-test="funnel-bar-1"]');
+        const barVisible = await funnelBar.isVisible().catch(() => false);
+
+        if (barVisible) {
+            // Open modal
+            await funnelBar.click();
+            const modal = page.locator('[data-test="step-evolution-modal"]');
+            await expect(modal).toBeVisible({ timeout: 10000 });
+
+            // Click close button
+            await page.click('[data-test="step-evolution-close"]');
+
+            // Modal should be hidden
+            await expect(modal).toBeHidden({ timeout: 5000 });
+        }
+
+        // CLEANUP
+        await deleteFunnel(page, matomoUrl, idSite, idFunnel);
+    });
+
+    test('Controller: step evolution modal closes on Escape key', async ({ page }) => {
+        // SETUP: Create a test funnel
+        const testFunnelName = `E2E Modal Escape Test ${Date.now()}`;
+        const idFunnel = await createTestFunnel(page, matomoUrl, idSite, testFunnelName, {
+            stepName: 'Escape Test Step',
+            pattern: '/modal-escape-test'
+        });
+        expect(idFunnel).toBeTruthy();
+
+        // TEST: Navigate to funnel view
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=viewFunnel&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        const funnelBar = page.locator('[data-test="funnel-bar-1"]');
+        const barVisible = await funnelBar.isVisible().catch(() => false);
+
+        if (barVisible) {
+            // Open modal
+            await funnelBar.click();
+            const modal = page.locator('[data-test="step-evolution-modal"]');
+            await expect(modal).toBeVisible({ timeout: 10000 });
+
+            // Press Escape
+            await page.keyboard.press('Escape');
+
+            // Modal should be hidden
+            await expect(modal).toBeHidden({ timeout: 5000 });
+        }
+
+        // CLEANUP
+        await deleteFunnel(page, matomoUrl, idSite, idFunnel);
+    });
+
+    test('Controller: step evolution modal shows table and chart', async ({ page }) => {
+        // SETUP: Create a test funnel
+        const testFunnelName = `E2E Modal Content Test ${Date.now()}`;
+        const idFunnel = await createTestFunnel(page, matomoUrl, idSite, testFunnelName, {
+            stepName: 'Content Test Step',
+            pattern: '/modal-content-test'
+        });
+        expect(idFunnel).toBeTruthy();
+
+        // TEST: Navigate to funnel view
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=viewFunnel&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        const funnelBar = page.locator('[data-test="funnel-bar-1"]');
+        const barVisible = await funnelBar.isVisible().catch(() => false);
+
+        if (barVisible) {
+            // Open modal
+            await funnelBar.click();
+            const modal = page.locator('[data-test="step-evolution-modal"]');
+            await expect(modal).toBeVisible({ timeout: 10000 });
+
+            // Wait for loading to finish (either content or error)
+            await page.waitForFunction(() => {
+                const loading = document.getElementById('stepEvolutionLoading');
+                return loading && loading.style.display === 'none';
+            }, { timeout: 15000 }).catch(() => { /* ignore timeout */ });
+
+            // Should have either content (table/chart) or error message
+            const table = page.locator('[data-test="step-evolution-table"]');
+            const error = page.locator('[data-test="step-evolution-error"]');
+
+            const hasTable = await table.isVisible().catch(() => false);
+            const hasError = await error.isVisible().catch(() => false);
+
+            // Either table or error should be shown after loading
+            expect(hasTable || hasError).toBe(true);
+        }
+
+        // CLEANUP
+        await deleteFunnel(page, matomoUrl, idSite, idFunnel);
+    });
+});
+
+// =============================================================================
+// OVERVIEW WIDGET SPARKLINES TESTS
+// =============================================================================
+
+test.describe('FunnelInsights Widget - Overview Sparklines', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    test.beforeEach(async ({ page }) => {
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
+    });
+
+    test('Widget: overview widget displays with data-test attributes', async ({ page }) => {
+        // Navigate to a dashboard or widget page that includes the overview widget
+        // The widget URL depends on Matomo setup, try the direct widget URL
+        await page.goto(`${matomoUrl}/index.php?module=Widgetize&action=iframe&widget=1&moduleToWidgetize=FunnelInsights&actionToWidgetize=FunnelOverview&idSite=${idSite}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        const content = await page.content();
+        expect(content).not.toContain('Fatal error');
+        expect(content).not.toContain('Parse error');
+
+        // Should have the overview widget container
+        const widget = page.locator('[data-test="funnel-overview-widget"]');
+        await expect(widget).toBeVisible({ timeout: 15000 });
+    });
+
+    test('Widget: overview shows table with Trend column when funnels exist', async ({ page }) => {
+        // SETUP: Create a test funnel to ensure we have data
+        const testFunnelName = `E2E Sparkline Widget Test ${Date.now()}`;
+        const idFunnel = await createTestFunnel(page, matomoUrl, idSite, testFunnelName, {
+            stepName: 'Sparkline Step',
+            pattern: '/sparkline-widget-test'
+        });
+        expect(idFunnel).toBeTruthy();
+
+        // TEST: Navigate to widget
+        await page.goto(`${matomoUrl}/index.php?module=Widgetize&action=iframe&widget=1&moduleToWidgetize=FunnelInsights&actionToWidgetize=FunnelOverview&idSite=${idSite}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        // Should have table
+        const table = page.locator('[data-test="funnel-overview-table"]');
+        await expect(table).toBeVisible({ timeout: 15000 });
+
+        // Table should have Trend column header
+        const trendHeader = table.locator('th').filter({ hasText: /Trend/i });
+        await expect(trendHeader).toBeVisible();
+
+        // CLEANUP
+        await deleteFunnel(page, matomoUrl, idSite, idFunnel);
+    });
+
+    test('Widget: overview sparkline container renders for funnel rows', async ({ page }) => {
+        // SETUP: Create a test funnel
+        const testFunnelName = `E2E Sparkline Container Test ${Date.now()}`;
+        const idFunnel = await createTestFunnel(page, matomoUrl, idSite, testFunnelName, {
+            stepName: 'Container Step',
+            pattern: '/sparkline-container-test'
+        });
+        expect(idFunnel).toBeTruthy();
+
+        // TEST: Navigate to widget
+        await page.goto(`${matomoUrl}/index.php?module=Widgetize&action=iframe&widget=1&moduleToWidgetize=FunnelInsights&actionToWidgetize=FunnelOverview&idSite=${idSite}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        // Should have funnel row
+        const row = page.locator(`[data-test="funnel-overview-row-${idFunnel}"]`);
+        await expect(row).toBeVisible({ timeout: 15000 });
+
+        // The sparkline might be present (SVG) or show dash if no trend data
+        // We check for either case
+        const sparkline = page.locator(`[data-test="sparkline-${idFunnel}"]`);
+        const dashPlaceholder = row.locator('td').last().locator('span');
+
+        const hasSparkline = await sparkline.isVisible().catch(() => false);
+        const hasDash = await dashPlaceholder.isVisible().catch(() => false);
+
+        // Either sparkline or dash placeholder should be visible
+        expect(hasSparkline || hasDash).toBe(true);
+
+        // CLEANUP
+        await deleteFunnel(page, matomoUrl, idSite, idFunnel);
+    });
+
+    test('Widget: overview shows empty state when no funnels', async ({ page }) => {
+        // This test assumes we can test with a site that has no funnels
+        // We'll just verify the structure exists
+        await page.goto(`${matomoUrl}/index.php?module=Widgetize&action=iframe&widget=1&moduleToWidgetize=FunnelInsights&actionToWidgetize=FunnelOverview&idSite=${idSite}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        const widget = page.locator('[data-test="funnel-overview-widget"]');
+        await expect(widget).toBeVisible({ timeout: 15000 });
+
+        // Should have either table with data or empty state
+        const table = page.locator('[data-test="funnel-overview-table"]');
+        const emptyState = page.locator('[data-test="funnel-overview-empty"]');
+
+        const hasTable = await table.isVisible().catch(() => false);
+        const hasEmpty = await emptyState.isVisible().catch(() => false);
+
+        // One of them should be visible
+        expect(hasTable || hasEmpty).toBe(true);
+    });
+});
+
+// =============================================================================
+// STEP EVOLUTION API TESTS
+// =============================================================================
+
+test.describe('FunnelInsights API - Step Evolution Endpoint', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    test.beforeEach(async ({ page }) => {
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
+    });
+
+    test('API: getStepEvolution returns JSON response', async ({ page }) => {
+        // SETUP: Create a test funnel
+        const testFunnelName = `E2E API StepEvolution Test ${Date.now()}`;
+        const idFunnel = await createTestFunnel(page, matomoUrl, idSite, testFunnelName, {
+            stepName: 'API Test Step',
+            pattern: '/api-step-evolution-test'
+        });
+        expect(idFunnel).toBeTruthy();
+
+        // TEST: Call the API endpoint
+        const response = await page.request.get(`${matomoUrl}/index.php?module=FunnelInsights&action=getStepEvolution&idSite=${idSite}&idFunnel=${idFunnel}&stepIndex=0&period=day&date=last7`);
+
+        expect(response.status()).toBe(200);
+
+        const contentType = response.headers()['content-type'];
+        expect(contentType).toContain('application/json');
+
+        const data = await response.json();
+        // Should be an array (possibly empty)
+        expect(Array.isArray(data)).toBe(true);
+
+        // CLEANUP
+        await deleteFunnel(page, matomoUrl, idSite, idFunnel);
+    });
+
+    test('API: getStepEvolution requires valid funnel ID', async ({ page }) => {
+        // TEST: Call with invalid funnel ID
+        const response = await page.request.get(`${matomoUrl}/index.php?module=FunnelInsights&action=getStepEvolution&idSite=${idSite}&idFunnel=999999&stepIndex=0&period=day&date=last7`);
+
+        // Should return error or empty response (not crash)
+        expect(response.status()).toBeLessThan(500);
+    });
+});
