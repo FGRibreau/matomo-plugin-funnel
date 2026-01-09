@@ -28,6 +28,8 @@ parameters:
     ignoreErrors:
         # Matomo Report class uses init() as protected method
         - '#Call to an undefined method Piwik\\Plugin\\Report::init\(\)#'
+        # Piwik\View uses __set magic method for template variables
+        - '#Access to an undefined property Piwik\\View::\$#'
     reportUnmatchedIgnoredErrors: false
     parallel:
         maximumNumberOfProcesses: 1
