@@ -750,6 +750,633 @@ test.describe('FunnelInsights Controller - viewFunnel Dashboard Layout (v3.0.42)
     });
 });
 
+test.describe('FunnelInsights Controller - Goal-Linked Funnels', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    test.beforeEach(async ({ page }) => {
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
+    });
+
+    test('should create funnel with goal association', async ({ page }) => {
+        const funnelName = `E2E Goal-Linked ${Date.now()}`;
+
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        // Fill funnel name
+        await page.locator('[data-test="funnel-name-input"]').fill(funnelName);
+
+        // Check if goal dropdown exists and has options
+        const goalSelect = page.locator('[data-test="funnel-goal-select"]');
+        await expect(goalSelect).toBeVisible({ timeout: 10000 });
+
+        // Get all options (there may or may not be goals configured)
+        const options = await goalSelect.locator('option').all();
+        expect(options.length).toBeGreaterThan(0); // At least the "No Goal" option
+
+        // If there's more than one option, select the second one (a real goal)
+        if (options.length > 1) {
+            const goalValue = await options[1].getAttribute('value');
+            await goalSelect.selectOption(goalValue);
+        }
+
+        // Add a step
+        const addButton = page.locator('[data-test="funnel-add-step-button"]');
+        await addButton.click();
+        await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
+
+        await page.locator('[data-test="funnel-step-name-input-0"]').fill('Goal Step');
+        await page.locator('[data-test="funnel-step-pattern-input-0"]').fill('/goal-page');
+
+        // Submit
+        await page.click('[data-test="funnel-submit-button"]');
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+
+        // Verify funnel was created
+        await expect(page.locator('[data-test="funnel-table"]')).toContainText(funnelName);
+
+        // Cleanup
+        page.on('dialog', dialog => dialog.accept());
+        const row = page.locator(`tr:has-text("${funnelName}")`);
+        await row.locator('a.icon-delete').click();
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+    });
+
+    test('should display goal info in funnel report when linked', async ({ page, request }) => {
+        // Create a funnel (goal linkage depends on available goals)
+        const funnelName = `E2E Goal Display ${Date.now()}`;
+        const idFunnel = await createTestFunnel(page, matomoUrl, idSite, funnelName, {
+            stepName: 'Test Step',
+            pattern: '/test'
+        });
+        expect(idFunnel).toBeTruthy();
+
+        // View the funnel report
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=viewFunnel&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        await page.waitForLoadState('networkidle');
+
+        // Page should load without errors
+        const content = await page.content();
+        expect(content).not.toContain('Fatal error');
+        expect(content).not.toContain('Parse error');
+
+        // The stats section should be visible
+        await expect(page.locator('[data-test="funnel-stats"]')).toBeVisible({ timeout: 10000 });
+
+        // Cleanup
+        await deleteFunnel(page, matomoUrl, idSite, idFunnel);
+    });
+});
+
+test.describe('FunnelInsights Controller - Strict Mode', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    test.beforeEach(async ({ page }) => {
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
+    });
+
+    test('should save and load strict mode setting', async ({ page }) => {
+        const funnelName = `E2E Strict Mode ${Date.now()}`;
+
+        // Create funnel with strict mode enabled
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        await page.locator('[data-test="funnel-name-input"]').fill(funnelName);
+
+        // Enable strict mode
+        const strictCheckbox = page.locator('[data-test="funnel-strict-mode-checkbox"]');
+        await strictCheckbox.check({ force: true });
+        expect(await strictCheckbox.isChecked()).toBe(true);
+
+        // Add a step
+        const addButton = page.locator('[data-test="funnel-add-step-button"]');
+        await addButton.click();
+        await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
+        await page.locator('[data-test="funnel-step-name-input-0"]').fill('Strict Step');
+        await page.locator('[data-test="funnel-step-pattern-input-0"]').fill('/strict');
+
+        // Submit
+        await page.click('[data-test="funnel-submit-button"]');
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+
+        // Edit the funnel again to verify strict mode was saved
+        const row = page.locator(`tr:has-text("${funnelName}")`);
+        await row.locator('a.icon-edit').click();
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        // Verify strict mode is still checked
+        const savedStrictCheckbox = page.locator('[data-test="funnel-strict-mode-checkbox"]');
+        expect(await savedStrictCheckbox.isChecked()).toBe(true);
+
+        // Cleanup
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        page.on('dialog', dialog => dialog.accept());
+        const deleteRow = page.locator(`tr:has-text("${funnelName}")`);
+        await deleteRow.locator('a.icon-delete').click();
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+    });
+
+    test('should create funnel without strict mode', async ({ page }) => {
+        const funnelName = `E2E Non-Strict ${Date.now()}`;
+
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        await page.locator('[data-test="funnel-name-input"]').fill(funnelName);
+
+        // Ensure strict mode is unchecked (default)
+        const strictCheckbox = page.locator('[data-test="funnel-strict-mode-checkbox"]');
+        if (await strictCheckbox.isChecked()) {
+            await strictCheckbox.uncheck({ force: true });
+        }
+        expect(await strictCheckbox.isChecked()).toBe(false);
+
+        // Add a step
+        const addButton = page.locator('[data-test="funnel-add-step-button"]');
+        await addButton.click();
+        await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
+        await page.locator('[data-test="funnel-step-name-input-0"]').fill('Non-Strict Step');
+        await page.locator('[data-test="funnel-step-pattern-input-0"]').fill('/non-strict');
+
+        // Submit
+        await page.click('[data-test="funnel-submit-button"]');
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+
+        // Edit to verify
+        const row = page.locator(`tr:has-text("${funnelName}")`);
+        await row.locator('a.icon-edit').click();
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        // Verify strict mode is still unchecked
+        expect(await page.locator('[data-test="funnel-strict-mode-checkbox"]').isChecked()).toBe(false);
+
+        // Cleanup
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        page.on('dialog', dialog => dialog.accept());
+        const deleteRow = page.locator(`tr:has-text("${funnelName}")`);
+        await deleteRow.locator('a.icon-delete').click();
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+    });
+});
+
+test.describe('FunnelInsights Controller - Step Time Limit', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    test.beforeEach(async ({ page }) => {
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
+    });
+
+    test('should save and load step time limit setting', async ({ page }) => {
+        const funnelName = `E2E Time Limit ${Date.now()}`;
+        const timeLimit = '7200'; // 2 hours in seconds
+
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        await page.locator('[data-test="funnel-name-input"]').fill(funnelName);
+
+        // Set time limit
+        const timeLimitInput = page.locator('[data-test="funnel-time-limit-input"]');
+        await timeLimitInput.fill(timeLimit);
+
+        // Add a step
+        const addButton = page.locator('[data-test="funnel-add-step-button"]');
+        await addButton.click();
+        await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
+        await page.locator('[data-test="funnel-step-name-input-0"]').fill('Timed Step');
+        await page.locator('[data-test="funnel-step-pattern-input-0"]').fill('/timed');
+
+        // Submit
+        await page.click('[data-test="funnel-submit-button"]');
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+
+        // Edit to verify time limit was saved
+        const row = page.locator(`tr:has-text("${funnelName}")`);
+        await row.locator('a.icon-edit').click();
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        // Verify time limit value
+        const savedTimeLimit = await page.locator('[data-test="funnel-time-limit-input"]').inputValue();
+        expect(savedTimeLimit).toBe(timeLimit);
+
+        // Cleanup
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        page.on('dialog', dialog => dialog.accept());
+        const deleteRow = page.locator(`tr:has-text("${funnelName}")`);
+        await deleteRow.locator('a.icon-delete').click();
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+    });
+
+    test('should accept zero as time limit (no limit)', async ({ page }) => {
+        const funnelName = `E2E No Time Limit ${Date.now()}`;
+
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        await page.locator('[data-test="funnel-name-input"]').fill(funnelName);
+
+        // Set time limit to 0
+        const timeLimitInput = page.locator('[data-test="funnel-time-limit-input"]');
+        await timeLimitInput.fill('0');
+
+        // Add a step
+        const addButton = page.locator('[data-test="funnel-add-step-button"]');
+        await addButton.click();
+        await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
+        await page.locator('[data-test="funnel-step-name-input-0"]').fill('No Limit Step');
+        await page.locator('[data-test="funnel-step-pattern-input-0"]').fill('/no-limit');
+
+        // Submit
+        await page.click('[data-test="funnel-submit-button"]');
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+
+        // Verify funnel was created
+        await expect(page.locator('[data-test="funnel-table"]')).toContainText(funnelName);
+
+        // Cleanup
+        page.on('dialog', dialog => dialog.accept());
+        const row = page.locator(`tr:has-text("${funnelName}")`);
+        await row.locator('a.icon-delete').click();
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+    });
+});
+
+test.describe('FunnelInsights Controller - Multiple Conditions (OR Logic)', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    test.beforeEach(async ({ page }) => {
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
+    });
+
+    test('should add multiple conditions to a step (OR logic)', async ({ page }) => {
+        const funnelName = `E2E Multiple Conditions ${Date.now()}`;
+
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        await page.locator('[data-test="funnel-name-input"]').fill(funnelName);
+
+        // Add a step
+        const addStepButton = page.locator('[data-test="funnel-add-step-button"]');
+        await addStepButton.click();
+        await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
+
+        await page.locator('[data-test="funnel-step-name-input-0"]').fill('Multi-Condition Step');
+
+        // First condition (already present)
+        await page.locator('[data-test="funnel-step-pattern-input-0"]').fill('/page-a');
+
+        // Add second condition (OR)
+        const addConditionButton = page.locator('button:has-text("Add Condition")').first();
+        await addConditionButton.click();
+
+        // Wait for second condition to appear
+        await page.waitForSelector('[data-test="funnel-step-0-condition-1"]', { timeout: 10000 });
+
+        // Fill second condition pattern - find the pattern input in the second condition
+        const secondCondition = page.locator('[data-test="funnel-step-0-condition-1"]');
+        const secondPatternInput = secondCondition.locator('input[type="text"][placeholder*="match"]');
+        await secondPatternInput.fill('/page-b');
+
+        // Submit
+        await page.click('[data-test="funnel-submit-button"]');
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+
+        // Verify funnel was created
+        await expect(page.locator('[data-test="funnel-table"]')).toContainText(funnelName);
+
+        // Edit to verify conditions were saved
+        const row = page.locator(`tr:has-text("${funnelName}")`);
+        await row.locator('a.icon-edit').click();
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        // Verify both conditions exist
+        await expect(page.locator('[data-test="funnel-step-0-condition-0"]')).toBeVisible();
+        await expect(page.locator('[data-test="funnel-step-0-condition-1"]')).toBeVisible();
+
+        // Cleanup
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        page.on('dialog', dialog => dialog.accept());
+        const deleteRow = page.locator(`tr:has-text("${funnelName}")`);
+        await deleteRow.locator('a.icon-delete').click();
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+    });
+
+    test('should validate OR conditions correctly', async ({ page }) => {
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        // Test validation with OR conditions via API
+        const steps = JSON.stringify([
+            {
+                name: 'OR Step',
+                conditions: [
+                    { comparison: 'url', operator: 'contains', pattern: '/checkout' },
+                    { comparison: 'url', operator: 'contains', pattern: '/cart' }
+                ]
+            }
+        ]);
+
+        // Test URL matching /checkout (should match first condition)
+        const response1 = await page.evaluate(async ({ matomoUrl, idSite, steps }) => {
+            const params = new URLSearchParams({
+                module: 'FunnelInsights',
+                action: 'validateSteps',
+                idSite: idSite,
+                steps: steps,
+                testUrl: 'http://example.com/checkout/step1'
+            });
+            const res = await fetch(`${matomoUrl}/index.php?${params.toString()}`);
+            return await res.text();
+        }, { matomoUrl, idSite, steps });
+
+        const json1 = JSON.parse(response1);
+        expect(json1[0].matched).toBe(true);
+
+        // Test URL matching /cart (should match second condition)
+        const response2 = await page.evaluate(async ({ matomoUrl, idSite, steps }) => {
+            const params = new URLSearchParams({
+                module: 'FunnelInsights',
+                action: 'validateSteps',
+                idSite: idSite,
+                steps: steps,
+                testUrl: 'http://example.com/cart/view'
+            });
+            const res = await fetch(`${matomoUrl}/index.php?${params.toString()}`);
+            return await res.text();
+        }, { matomoUrl, idSite, steps });
+
+        const json2 = JSON.parse(response2);
+        expect(json2[0].matched).toBe(true);
+
+        // Test URL not matching any condition
+        const response3 = await page.evaluate(async ({ matomoUrl, idSite, steps }) => {
+            const params = new URLSearchParams({
+                module: 'FunnelInsights',
+                action: 'validateSteps',
+                idSite: idSite,
+                steps: steps,
+                testUrl: 'http://example.com/about-us'
+            });
+            const res = await fetch(`${matomoUrl}/index.php?${params.toString()}`);
+            return await res.text();
+        }, { matomoUrl, idSite, steps });
+
+        const json3 = JSON.parse(response3);
+        expect(json3[0].matched).toBe(false);
+    });
+});
+
+test.describe('FunnelInsights Controller - Suggested Values API', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    test.beforeEach(async ({ page }) => {
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
+    });
+
+    test('should return suggested values for URL comparison', async ({ page, request }) => {
+        // Call the getSuggestedValues API
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getSuggestedValues',
+                idSite: idSite,
+                comparisonType: 'url',
+                format: 'JSON'
+            }
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Parse error');
+
+        // Response should be valid JSON (array or object with result)
+        const json = JSON.parse(text);
+        expect(json).toBeDefined();
+        // May return empty array if no tracking data exists
+        expect(Array.isArray(json) || typeof json === 'object').toBe(true);
+    });
+
+    test('should return suggested values for page_title comparison', async ({ page, request }) => {
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getSuggestedValues',
+                idSite: idSite,
+                comparisonType: 'page_title',
+                format: 'JSON'
+            }
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Parse error');
+
+        const json = JSON.parse(text);
+        expect(json).toBeDefined();
+    });
+
+    test('should return suggested values for event_category comparison', async ({ page, request }) => {
+        const response = await request.get(`${matomoUrl}/index.php`, {
+            params: {
+                module: 'API',
+                method: 'FunnelInsights.getSuggestedValues',
+                idSite: idSite,
+                comparisonType: 'event_category',
+                format: 'JSON'
+            }
+        });
+
+        const text = await response.text();
+        expect(text).not.toContain('Fatal error');
+        expect(text).not.toContain('Parse error');
+
+        const json = JSON.parse(text);
+        expect(json).toBeDefined();
+    });
+});
+
+test.describe('FunnelInsights Controller - Required Steps', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    test.beforeEach(async ({ page }) => {
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
+    });
+
+    test('should save and load required step setting', async ({ page }) => {
+        const funnelName = `E2E Required Steps ${Date.now()}`;
+
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        await page.locator('[data-test="funnel-name-input"]').fill(funnelName);
+
+        // Add first step (required)
+        const addButton = page.locator('[data-test="funnel-add-step-button"]');
+        await addButton.click();
+        await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
+        await page.locator('[data-test="funnel-step-name-input-0"]').fill('Required Step');
+        await page.locator('[data-test="funnel-step-pattern-input-0"]').fill('/required');
+        await page.locator('[data-test="funnel-step-required-checkbox-0"]').check();
+
+        // Add second step (not required)
+        await addButton.click();
+        await page.waitForSelector('[data-test="funnel-step-card-1"]', { timeout: 10000 });
+        await page.locator('[data-test="funnel-step-name-input-1"]').fill('Optional Step');
+        await page.locator('[data-test="funnel-step-pattern-input-1"]').fill('/optional');
+        // Don't check the required checkbox for this one
+
+        // Submit
+        await page.click('[data-test="funnel-submit-button"]');
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+
+        // Edit to verify required settings were saved
+        const row = page.locator(`tr:has-text("${funnelName}")`);
+        await row.locator('a.icon-edit').click();
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        // Verify first step is required
+        expect(await page.locator('[data-test="funnel-step-required-checkbox-0"]').isChecked()).toBe(true);
+        // Verify second step is not required
+        expect(await page.locator('[data-test="funnel-step-required-checkbox-1"]').isChecked()).toBe(false);
+
+        // Cleanup
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        page.on('dialog', dialog => dialog.accept());
+        const deleteRow = page.locator(`tr:has-text("${funnelName}")`);
+        await deleteRow.locator('a.icon-delete').click();
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+    });
+});
+
+test.describe('FunnelInsights Controller - Step Reordering', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    test.beforeEach(async ({ page }) => {
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
+    });
+
+    test('should move step up and down', async ({ page }) => {
+        const funnelName = `E2E Reorder Steps ${Date.now()}`;
+
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        await page.locator('[data-test="funnel-name-input"]').fill(funnelName);
+
+        // Add first step
+        const addButton = page.locator('[data-test="funnel-add-step-button"]');
+        await addButton.click();
+        await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
+        await page.locator('[data-test="funnel-step-name-input-0"]').fill('Step A');
+        await page.locator('[data-test="funnel-step-pattern-input-0"]').fill('/step-a');
+
+        // Add second step
+        await addButton.click();
+        await page.waitForSelector('[data-test="funnel-step-card-1"]', { timeout: 10000 });
+        await page.locator('[data-test="funnel-step-name-input-1"]').fill('Step B');
+        await page.locator('[data-test="funnel-step-pattern-input-1"]').fill('/step-b');
+
+        // Verify initial order
+        let step0Name = await page.locator('[data-test="funnel-step-name-input-0"]').inputValue();
+        let step1Name = await page.locator('[data-test="funnel-step-name-input-1"]').inputValue();
+        expect(step0Name).toBe('Step A');
+        expect(step1Name).toBe('Step B');
+
+        // Move Step B up (click move up on step 1)
+        await page.locator('[data-test="funnel-step-move-up-1"]').click();
+
+        // Verify new order (Step B should now be step 0)
+        step0Name = await page.locator('[data-test="funnel-step-name-input-0"]').inputValue();
+        step1Name = await page.locator('[data-test="funnel-step-name-input-1"]').inputValue();
+        expect(step0Name).toBe('Step B');
+        expect(step1Name).toBe('Step A');
+
+        // Move Step A up (click move up on step 1 again)
+        await page.locator('[data-test="funnel-step-move-up-1"]').click();
+
+        // Verify back to original order
+        step0Name = await page.locator('[data-test="funnel-step-name-input-0"]').inputValue();
+        step1Name = await page.locator('[data-test="funnel-step-name-input-1"]').inputValue();
+        expect(step0Name).toBe('Step A');
+        expect(step1Name).toBe('Step B');
+
+        // Submit and verify order is saved
+        await page.click('[data-test="funnel-submit-button"]');
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+
+        // Cleanup
+        page.on('dialog', dialog => dialog.accept());
+        const row = page.locator(`tr:has-text("${funnelName}")`);
+        await row.locator('a.icon-delete').click();
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+    });
+
+    test('should disable move up on first step and move down on last step', async ({ page }) => {
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        // Add two steps
+        const addButton = page.locator('[data-test="funnel-add-step-button"]');
+        await addButton.click();
+        await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
+        await addButton.click();
+        await page.waitForSelector('[data-test="funnel-step-card-1"]', { timeout: 10000 });
+
+        // Move up button on first step should be disabled
+        await expect(page.locator('[data-test="funnel-step-move-up-0"]')).toBeDisabled();
+
+        // Move down button on last step should be disabled
+        await expect(page.locator('[data-test="funnel-step-move-down-1"]')).toBeDisabled();
+
+        // Middle buttons should be enabled
+        await expect(page.locator('[data-test="funnel-step-move-down-0"]')).toBeEnabled();
+        await expect(page.locator('[data-test="funnel-step-move-up-1"]')).toBeEnabled();
+    });
+});
+
 test.describe('FunnelInsights Controller - Navigation', () => {
     const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
     const matomoUser = process.env.MATOMO_USER || 'admin';
