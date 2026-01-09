@@ -20,16 +20,16 @@
         </div>
         {% endif %}
 
-        <div class="funnel-stats" style="display: flex; gap: 24px; margin: 24px 0;">
-            <div class="stat-box" style="flex: 1; text-align: center; padding: 16px; background: #f5f5f5; border-radius: 8px;">
+        <div class="funnel-stats" style="display: flex; gap: 24px; margin: 24px 0;" data-test="funnel-stats">
+            <div class="stat-box" style="flex: 1; text-align: center; padding: 16px; background: #f5f5f5; border-radius: 8px;" data-test="funnel-stat-entries">
                 <div style="font-size: 28px; font-weight: bold; color: #333;">{{ funnelReport.total_entries|default(0)|number_format }}</div>
                 <div style="font-size: 12px; color: #666; text-transform: uppercase;">{{ 'FunnelInsights_TotalEntries'|translate }}</div>
             </div>
-            <div class="stat-box" style="flex: 1; text-align: center; padding: 16px; background: #f5f5f5; border-radius: 8px;">
+            <div class="stat-box" style="flex: 1; text-align: center; padding: 16px; background: #f5f5f5; border-radius: 8px;" data-test="funnel-stat-conversions">
                 <div style="font-size: 28px; font-weight: bold; color: #4caf50;">{{ funnelReport.total_conversions|default(0)|number_format }}</div>
                 <div style="font-size: 12px; color: #666; text-transform: uppercase;">{{ 'FunnelInsights_TotalConversions'|translate }}</div>
             </div>
-            <div class="stat-box" style="flex: 1; text-align: center; padding: 16px; background: #f5f5f5; border-radius: 8px;">
+            <div class="stat-box" style="flex: 1; text-align: center; padding: 16px; background: #f5f5f5; border-radius: 8px;" data-test="funnel-stat-rate">
                 <div style="font-size: 28px; font-weight: bold; color: #2196f3;">{{ funnelReport.conversion_rate|default(0)|number_format(1) }}%</div>
                 <div style="font-size: 12px; color: #666; text-transform: uppercase;">{{ 'FunnelInsights_ConversionRate'|translate }}</div>
             </div>
@@ -211,10 +211,10 @@
 
 <div class="card">
     <div class="card-content" style="display: flex; gap: 12px;">
-        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'index'}) }}" class="btn btn-flat">
+        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'index'}) }}" class="btn btn-flat" data-test="funnel-back-button">
             <span class="icon-arrow-left"></span> {{ 'FunnelInsights_BackToFunnels'|translate }}
         </a>
-        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'edit', 'idFunnel': funnel.idfunnel}) }}" class="btn">
+        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'edit', 'idFunnel': funnel.idfunnel}) }}" class="btn" data-test="funnel-view-edit-button">
             <span class="icon-edit"></span> {{ 'FunnelInsights_EditFunnel'|translate }}
         </a>
     </div>

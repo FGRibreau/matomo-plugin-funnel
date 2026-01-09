@@ -18,21 +18,21 @@
 
         var FunnelEditorComponent = {
             template: `
-              <div class="funnel-editor">
+              <div class="funnel-editor" data-test="funnel-editor">
                 <h3>Funnel Steps Configuration</h3>
 
                 <div v-if="steps.length === 0" class="notification system notification-info">
                   No steps defined. Add a step to get started.
                 </div>
 
-                <div v-for="(step, stepIndex) in steps" :key="stepIndex" class="step-card card" style="margin-bottom: 15px;">
+                <div v-for="(step, stepIndex) in steps" :key="stepIndex" class="step-card card" style="margin-bottom: 15px;" :data-test="'funnel-step-card-' + stepIndex">
                   <div class="card-content">
                     <div class="step-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
                       <span class="step-number" style="font-weight: bold;">Step {{ stepIndex + 1 }} - {{ step.name || 'Untitled Step' }}</span>
                       <div class="step-actions">
-                         <button type="button" @click="moveStep(stepIndex, -1)" :disabled="stepIndex === 0" title="Move Up" class="btn btn-sm" style="margin-right: 5px;">&#8593;</button>
-                         <button type="button" @click="moveStep(stepIndex, 1)" :disabled="stepIndex === steps.length - 1" title="Move Down" class="btn btn-sm" style="margin-right: 5px;">&#8595;</button>
-                         <button type="button" @click="removeStep(stepIndex)" class="btn btn-sm" style="color: #d32f2f;" title="Remove">&times;</button>
+                         <button type="button" @click="moveStep(stepIndex, -1)" :disabled="stepIndex === 0" title="Move Up" class="btn btn-sm" style="margin-right: 5px;" :data-test="'funnel-step-move-up-' + stepIndex">&#8593;</button>
+                         <button type="button" @click="moveStep(stepIndex, 1)" :disabled="stepIndex === steps.length - 1" title="Move Down" class="btn btn-sm" style="margin-right: 5px;" :data-test="'funnel-step-move-down-' + stepIndex">&#8595;</button>
+                         <button type="button" @click="removeStep(stepIndex)" class="btn btn-sm" style="color: #d32f2f;" title="Remove" :data-test="'funnel-step-remove-' + stepIndex">&times;</button>
                       </div>
                     </div>
 
@@ -40,14 +40,14 @@
                       <div class="form-group row">
                           <div class="col s12">
                               <label>Step Name</label>
-                              <input type="text" v-model="step.name" class="form-control" placeholder="e.g. Landing Page" required>
+                              <input type="text" v-model="step.name" class="form-control" placeholder="e.g. Landing Page" required :data-test="'funnel-step-name-input-' + stepIndex">
                           </div>
                       </div>
 
                       <div class="form-group row" style="margin-top: 10px;">
                           <div class="col s12">
                               <label>
-                                  <input type="checkbox" v-model="step.required"> Required Step
+                                  <input type="checkbox" v-model="step.required" :data-test="'funnel-step-required-checkbox-' + stepIndex"> Required Step
                               </label>
                               <span class="form-description">Visitor must pass through this step for the funnel to continue.</span>
                           </div>
@@ -57,7 +57,7 @@
                       <div v-if="step.conditions.length === 0" class="notification system notification-warning">
                           No conditions for this step. Add one.
                       </div>
-                      <div v-for="(condition, condIndex) in step.conditions" :key="condIndex" class="condition-group" style="border: 1px solid #e0e0e0; padding: 15px; margin-bottom: 10px; border-radius: 4px; background: #fafafa;">
+                      <div v-for="(condition, condIndex) in step.conditions" :key="condIndex" class="condition-group" style="border: 1px solid #e0e0e0; padding: 15px; margin-bottom: 10px; border-radius: 4px; background: #fafafa;" :data-test="'funnel-step-' + stepIndex + '-condition-' + condIndex">
                           <div class="condition-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                               <strong>Condition {{ condIndex + 1 }}</strong>
                               <button type="button" @click="removeCondition(stepIndex, condIndex)" class="btn btn-sm" style="color: #d32f2f;" title="Remove Condition">&times;</button>
@@ -65,7 +65,7 @@
                           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                               <div style="flex: 1; min-width: 150px;">
                                   <label>Logic</label>
-                                  <select v-model="condition.comparison" class="form-control">
+                                  <select v-model="condition.comparison" class="form-control" :data-test="'funnel-step-comparison-select-' + stepIndex">
                                       <option value="url">URL</option>
                                       <option value="path">URL Path</option>
                                       <option value="page_title">Page Title</option>
@@ -78,7 +78,7 @@
 
                               <div style="flex: 1; min-width: 150px;">
                                   <label>Operator</label>
-                                  <select v-model="condition.operator" class="form-control">
+                                  <select v-model="condition.operator" class="form-control" :data-test="'funnel-step-operator-select-' + stepIndex">
                                       <option value="equals">Equals</option>
                                       <option value="not_equals">Does not equal</option>
                                       <option value="contains">Contains</option>
@@ -93,7 +93,7 @@
 
                               <div style="flex: 2; min-width: 200px;">
                                   <label>Pattern</label>
-                                  <input type="text" v-model="condition.pattern" class="form-control" placeholder="value to match">
+                                  <input type="text" v-model="condition.pattern" class="form-control" placeholder="value to match" :data-test="'funnel-step-pattern-input-' + stepIndex">
                               </div>
                           </div>
                           <div style="display: flex; gap: 20px; margin-top: 10px; flex-wrap: wrap;">
@@ -110,7 +110,7 @@
                   </div>
                 </div>
 
-                <button type="button" @click="addStep" class="btn">+ Add Step</button>
+                <button type="button" @click="addStep" class="btn" data-test="funnel-add-step-button">+ Add Step</button>
 
                 <hr style="margin: 20px 0;">
 
@@ -119,8 +119,8 @@
                         <h4>Validate Steps</h4>
                         <p class="form-description">Enter a URL (or value) to test which step it matches.</p>
                         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                            <input type="text" v-model="testValue" class="form-control" placeholder="http://example.com/checkout" style="flex: 1;">
-                            <button type="button" @click="validate" class="btn">Test</button>
+                            <input type="text" v-model="testValue" class="form-control" placeholder="http://example.com/checkout" style="flex: 1;" data-test="funnel-test-input">
+                            <button type="button" @click="validate" class="btn" data-test="funnel-test-button">Test</button>
                         </div>
 
                         <div v-if="validationResults.length > 0" class="validation-results">

@@ -21,57 +21,55 @@ export async function createTestFunnel(page, matomoUrl, idSite, name, options = 
     await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}&idFunnel=0`);
     await page.waitForLoadState('networkidle');
 
-    // Wait for Vue component to mount
-    await page.waitForSelector('.funnel-editor', { timeout: 15000 });
+    // Wait for Vue component to mount using data-test selector
+    await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
 
-    // Fill funnel name
-    await page.locator('input#name').fill(name);
+    // Fill funnel name using data-test selector
+    await page.locator('[data-test="funnel-name-input"]').fill(name);
 
-    // Add a step using the Vue component's add button
-    const addButton = page.locator('.funnel-editor button.add-step-btn, .funnel-editor button:has-text("+ Add Step")');
+    // Add a step using data-test selector
+    const addButton = page.locator('[data-test="funnel-add-step-button"]');
     await addButton.waitFor({ state: 'visible', timeout: 10000 });
     await addButton.click();
 
-    // Wait for step card to appear with all its inputs
-    await page.waitForSelector('.step-card .step-body', { timeout: 10000 });
+    // Wait for step card to appear using data-test selector
+    await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
 
-    // Wait a bit for Vue reactivity to complete
-    await page.waitForTimeout(500);
-
-    // Fill step name (first input in step-card with the placeholder)
-    const stepNameInput = page.locator('.step-card input[placeholder="e.g. Landing Page"]').first();
+    // Fill step name using data-test selector
+    const stepNameInput = page.locator('[data-test="funnel-step-name-input-0"]');
     await stepNameInput.waitFor({ state: 'visible', timeout: 5000 });
     await stepNameInput.fill(options.stepName || 'Homepage');
 
-    // The comparison select is already set to 'url' by default, change if needed
-    if (options.comparison && options.comparison !== 'url') {
-        const comparisonSelect = page.locator('.step-card .condition-group select.form-control').first();
+    // The comparison select is already set to 'path' by default, change if needed
+    if (options.comparison && options.comparison !== 'path') {
+        const comparisonSelect = page.locator('[data-test="funnel-step-comparison-select-0"]');
         await comparisonSelect.waitFor({ state: 'visible', timeout: 5000 });
         await comparisonSelect.selectOption(options.comparison);
     }
 
-    // Fill pattern (the input with placeholder "value to match")
-    const patternInput = page.locator('.step-card input[placeholder="value to match"]').first();
+    // Fill pattern using data-test selector
+    const patternInput = page.locator('[data-test="funnel-step-pattern-input-0"]');
     await patternInput.waitFor({ state: 'visible', timeout: 5000 });
     await patternInput.fill(options.pattern || '/');
 
     // Activate the funnel (unless explicitly disabled)
     if (options.active !== false) {
-        await page.locator('select#active').selectOption('1');
+        await page.locator('[data-test="funnel-active-select"]').selectOption('1');
     }
 
-    // Submit form
-    await page.locator('input[type="submit"].btn').click();
+    // Submit form using data-test selector
+    await page.locator('[data-test="funnel-submit-button"]').click();
     await page.waitForLoadState('networkidle');
 
     // Wait for redirect to manage page
     await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
 
-    // Get the created funnel ID from manage page
-    const row = page.locator(`table.entityTable tbody tr:has-text("${name}")`).first();
+    // Get the created funnel ID from manage page using data-test selector
+    const table = page.locator('[data-test="funnel-table"]');
+    const row = table.locator(`tbody tr:has-text("${name}")`).first();
     if (await row.count() > 0) {
-        // Use the Edit link specifically (icon-edit class) to avoid matching Duplicate/Delete links
-        const editLink = row.locator('a.icon-edit[href*="idFunnel="]');
+        // Use the Edit link with data-test attribute
+        const editLink = row.locator('a[data-test^="funnel-edit-link-"]');
         const href = await editLink.getAttribute('href');
         const match = href ? href.match(/idFunnel=(\d+)/) : null;
         return match ? parseInt(match[1]) : null;
@@ -90,7 +88,8 @@ export async function deleteFunnel(page, matomoUrl, idSite, idFunnel) {
     await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
     await page.waitForLoadState('networkidle');
 
-    const deleteButton = page.locator(`a[href*="action=delete"][href*="idFunnel=${idFunnel}"], button[data-idfunnel="${idFunnel}"]`);
+    // Use data-test selector for delete button
+    const deleteButton = page.locator(`[data-test="funnel-delete-link-${idFunnel}"]`);
     if (await deleteButton.count() > 0) {
         page.on('dialog', dialog => dialog.accept());
         await deleteButton.click();
@@ -181,7 +180,6 @@ export async function loginToMatomo(page, matomoUrl, username, password) {
     const form = page.locator('#login_form');
     await form.locator('#login_form_login').fill(username);
     await form.locator('#login_form_password').fill(password);
-    await page.waitForTimeout(500);
     await form.locator('input[type="submit"]').click();
     await page.waitForURL(/(?!.*module=Login)|.*module=CoreHome/, { timeout: 30000 });
     await page.waitForLoadState('networkidle');
@@ -199,10 +197,12 @@ export async function getFunnelIdByName(page, matomoUrl, idSite, name) {
     await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
     await page.waitForLoadState('networkidle');
 
-    const row = page.locator(`table.entityTable tbody tr:has-text("${name}")`).first();
+    // Use data-test selectors
+    const table = page.locator('[data-test="funnel-table"]');
+    const row = table.locator(`tbody tr:has-text("${name}")`).first();
     if (await row.count() > 0) {
-        // Use the Edit link specifically (icon-edit class) to avoid matching Duplicate/Delete links
-        const editLink = row.locator('a.icon-edit[href*="idFunnel="]');
+        // Use the Edit link with data-test attribute
+        const editLink = row.locator('a[data-test^="funnel-edit-link-"]');
         const href = await editLink.getAttribute('href');
         const match = href ? href.match(/idFunnel=(\d+)/) : null;
         return match ? parseInt(match[1]) : null;

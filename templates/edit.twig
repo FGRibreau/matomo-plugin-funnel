@@ -5,21 +5,21 @@
     <div class="card-content">
         <h2 class="card-title">{{ funnel is defined and funnel ? 'FunnelInsights_EditFunnel'|translate : 'FunnelInsights_CreateFunnel'|translate }}</h2>
 
-        <form action="{{ linkTo({'module': 'FunnelInsights', 'action': 'save'}) }}" method="post" class="editForm">
+        <form action="{{ linkTo({'module': 'FunnelInsights', 'action': 'save'}) }}" method="post" class="editForm" data-test="funnel-edit-form">
             <input type="hidden" name="form_nonce" value="{{ form_nonce }}" />
             <input type="hidden" name="idFunnel" value="{{ funnel.idfunnel|default(0) }}" />
 
             <div class="form-group row">
                 <div class="col s12">
                     <label for="name">{{ 'FunnelInsights_FunnelName'|translate }}</label>
-                    <input type="text" name="name" id="name" value="{{ funnel.name|default('') }}" class="form-control" required />
+                    <input type="text" name="name" id="name" value="{{ funnel.name|default('') }}" class="form-control" required data-test="funnel-name-input" />
                 </div>
             </div>
 
             <div class="form-group row">
                 <div class="col s12">
                     <label for="active">{{ 'FunnelInsights_Active'|translate }}</label>
-                    <select name="active" id="active" class="form-control">
+                    <select name="active" id="active" class="form-control" data-test="funnel-active-select">
                         <option value="1" {% if funnel.active|default(0) == 1 %}selected{% endif %}>{{ 'General_Yes'|translate }}</option>
                         <option value="0" {% if funnel.active|default(0) == 0 %}selected{% endif %}>{{ 'General_No'|translate }}</option>
                     </select>
@@ -30,7 +30,7 @@
             <div class="form-group row">
                 <div class="col s12">
                     <label for="goal_id">{{ 'FunnelInsights_GoalFilterLabel'|translate }}</label>
-                    <select name="goal_id" id="goal_id" class="form-control">
+                    <select name="goal_id" id="goal_id" class="form-control" data-test="funnel-goal-select">
                         <option value="">{{ 'FunnelInsights_GoalFilterNone'|translate }}</option>
                         {% for goal in goals %}
                             <option value="{{ goal.idgoal }}" {% if funnel.goal_id|default('') == goal.idgoal %}selected{% endif %}>
@@ -48,7 +48,7 @@
             <div class="form-group row">
                 <div class="col s12">
                     <label>
-                        <input type="checkbox" name="strict_mode" value="1" {% if funnel.strict_mode|default(0) == 1 %}checked{% endif %}>
+                        <input type="checkbox" name="strict_mode" value="1" {% if funnel.strict_mode|default(0) == 1 %}checked{% endif %} data-test="funnel-strict-mode-checkbox">
                         {{ 'FunnelInsights_StrictMode'|translate }}
                     </label>
                     <span class="form-description">{{ 'FunnelInsights_StrictModeHelp'|translate }}</span>
@@ -58,7 +58,7 @@
             <div class="form-group row">
                 <div class="col s12">
                     <label for="step_time_limit">{{ 'FunnelInsights_TimeLimit'|translate }} (seconds)</label>
-                    <input type="number" name="step_time_limit" id="step_time_limit" value="{{ funnel.step_time_limit|default(0) }}" class="form-control" min="0" />
+                    <input type="number" name="step_time_limit" id="step_time_limit" value="{{ funnel.step_time_limit|default(0) }}" class="form-control" min="0" data-test="funnel-time-limit-input" />
                     <span class="form-description">{{ 'FunnelInsights_TimeLimitHelp'|translate }}</span>
                 </div>
             </div>
@@ -66,7 +66,7 @@
             <div class="form-group row">
                 <div class="col s12">
                     <label>{{ 'FunnelInsights_Steps'|translate }}</label>
-                    <div id="funnel-editor-app">
+                    <div id="funnel-editor-app" data-test="funnel-steps-editor">
                         <funnel-editor :initial-steps="{{ funnel.steps|default([])|json_encode }}"></funnel-editor>
                     </div>
                 </div>
@@ -74,8 +74,8 @@
 
             <div class="form-group row">
                 <div class="col s12">
-                    <input type="submit" value="{{ 'FunnelInsights_Save'|translate }}" class="btn" />
-                    <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'manage'}) }}" class="btn btn-flat">{{ 'FunnelInsights_Cancel'|translate }}</a>
+                    <input type="submit" value="{{ 'FunnelInsights_Save'|translate }}" class="btn" data-test="funnel-submit-button" />
+                    <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'manage'}) }}" class="btn btn-flat" data-test="funnel-cancel-button">{{ 'FunnelInsights_Cancel'|translate }}</a>
                 </div>
             </div>
         </form>

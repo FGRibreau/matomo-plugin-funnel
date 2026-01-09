@@ -5,10 +5,10 @@
     <div class="card-content">
         <h2 class="card-title">{{ 'FunnelInsights_ManageFunnels'|translate }}</h2>
         <p style="margin-bottom: 16px;">
-            <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'edit'}) }}" class="btn">{{ 'FunnelInsights_CreateFunnel'|translate }}</a>
+            <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'edit'}) }}" class="btn" data-test="funnel-create-button">{{ 'FunnelInsights_CreateFunnel'|translate }}</a>
         </p>
 
-        <table class="entityTable dataTable">
+        <table class="entityTable dataTable" data-test="funnel-table">
             <thead>
                 <tr>
                     <th>{{ 'FunnelInsights_FunnelName'|translate }}</th>
@@ -20,7 +20,7 @@
             </thead>
             <tbody>
                 {% for funnel in funnels %}
-                <tr>
+                <tr data-test="funnel-row-{{ funnel.idfunnel }}">
                     <td>{{ funnel.name }}</td>
                     <td>
                         {% if funnel.active %}
@@ -32,9 +32,9 @@
                     <td>{{ funnel.steps|length }}</td>
                     <td>{{ funnel.updated_date }}</td>
                     <td>
-                        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'edit', 'idFunnel': funnel.idfunnel}) }}" class="table-action icon-edit" title="{{ 'General_Edit'|translate }}"></a>
-                        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'duplicate', 'idFunnel': funnel.idfunnel}) }}" class="table-action icon-copy" title="Duplicate" onclick="return confirm('Duplicate this funnel?');"></a>
-                        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'delete', 'idFunnel': funnel.idfunnel}) }}" class="table-action icon-delete" title="{{ 'General_Delete'|translate }}" onclick="return confirm('{{ 'FunnelInsights_ConfirmDelete'|translate }}');"></a>
+                        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'edit', 'idFunnel': funnel.idfunnel}) }}" class="table-action icon-edit" title="{{ 'General_Edit'|translate }}" data-test="funnel-edit-link-{{ funnel.idfunnel }}"></a>
+                        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'duplicate', 'idFunnel': funnel.idfunnel}) }}" class="table-action icon-copy" title="Duplicate" onclick="return confirm('Duplicate this funnel?');" data-test="funnel-duplicate-link-{{ funnel.idfunnel }}"></a>
+                        <a href="{{ linkTo({'module': 'FunnelInsights', 'action': 'delete', 'idFunnel': funnel.idfunnel}) }}" class="table-action icon-delete" title="{{ 'General_Delete'|translate }}" onclick="return confirm('{{ 'FunnelInsights_ConfirmDelete'|translate }}');" data-test="funnel-delete-link-{{ funnel.idfunnel }}"></a>
                     </td>
                 </tr>
                 {% else %}

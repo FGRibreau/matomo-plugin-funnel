@@ -133,13 +133,13 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
         // TEST: Edit the funnel and verify form is pre-filled
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}&idFunnel=${idFunnel}`);
         await page.waitForLoadState('networkidle');
-        await page.waitForSelector('.funnel-editor', { timeout: 15000 });
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
 
         const content = await page.content();
         expect(content).not.toContain('Fatal error');
 
         // Name field should be pre-filled
-        const nameInput = page.locator('input#name');
+        const nameInput = page.locator('[data-test="funnel-name-input"]');
         const nameValue = await nameInput.inputValue();
         expect(nameValue.length).toBeGreaterThan(0);
 
@@ -151,7 +151,7 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
         // Navigate to edit page first to set up cookies
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
-        await page.waitForSelector('.funnel-editor', { timeout: 15000 });
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
 
         // Make AJAX request to validateSteps - use the correct API format
         const steps = JSON.stringify([
@@ -187,7 +187,7 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
     test('Controller: validateSteps with non-matching URL', async ({ page }) => {
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
-        await page.waitForSelector('.funnel-editor', { timeout: 15000 });
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
 
         const steps = JSON.stringify([
             { name: 'Checkout', conditions: [{ comparison: 'url', operator: 'contains', pattern: '/checkout' }] }
@@ -216,32 +216,31 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
 
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
-        await page.waitForSelector('.funnel-editor', { timeout: 15000 });
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
 
         // Fill the form
-        await page.fill('input#name', funnelName);
+        await page.fill('[data-test="funnel-name-input"]', funnelName);
 
         // Add a step using the Vue component
-        const addButton = page.locator('.funnel-editor button:has-text("+ Add Step")');
+        const addButton = page.locator('[data-test="funnel-add-step-button"]');
         await addButton.waitFor({ state: 'visible', timeout: 10000 });
         await addButton.click();
-        await page.waitForSelector('.step-card .step-body', { timeout: 10000 });
-        await page.waitForTimeout(500);
+        await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
 
-        const stepNameInput = page.locator('.step-card input[placeholder="e.g. Landing Page"]').first();
+        const stepNameInput = page.locator('[data-test="funnel-step-name-input-0"]');
         await stepNameInput.waitFor({ state: 'visible', timeout: 5000 });
         await stepNameInput.fill('Test Step');
 
-        const patternInput = page.locator('.step-card input[placeholder="value to match"]').first();
+        const patternInput = page.locator('[data-test="funnel-step-pattern-input-0"]');
         await patternInput.waitFor({ state: 'visible', timeout: 5000 });
         await patternInput.fill('/test-url');
 
         // Submit the form
-        await page.click('input[type="submit"].btn');
+        await page.click('[data-test="funnel-submit-button"]');
         await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
 
         // Verify funnel was created
-        await expect(page.locator('table.entityTable')).toContainText(funnelName);
+        await expect(page.locator('[data-test="funnel-table"]')).toContainText(funnelName);
 
         // Cleanup: delete the funnel
         page.on('dialog', dialog => dialog.accept());
@@ -253,10 +252,10 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
     test('Controller: save action with invalid steps JSON shows error', async ({ page }) => {
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
-        await page.waitForSelector('.funnel-editor', { timeout: 15000 });
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
 
         // Fill name but leave steps empty/invalid
-        await page.fill('input#name', 'Invalid Steps Test');
+        await page.fill('[data-test="funnel-name-input"]', 'Invalid Steps Test');
 
         // Try to submit without steps (the Vue component should handle this gracefully)
         // The form should either show validation error or create funnel with empty steps
@@ -271,25 +270,24 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
 
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
-        await page.waitForSelector('.funnel-editor', { timeout: 15000 });
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
 
-        await page.fill('input#name', originalName);
+        await page.fill('[data-test="funnel-name-input"]', originalName);
 
-        const addButton = page.locator('.funnel-editor button:has-text("+ Add Step")');
+        const addButton = page.locator('[data-test="funnel-add-step-button"]');
         await addButton.waitFor({ state: 'visible', timeout: 10000 });
         await addButton.click();
-        await page.waitForSelector('.step-card .step-body', { timeout: 10000 });
-        await page.waitForTimeout(500);
+        await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
 
-        const stepNameInput = page.locator('.step-card input[placeholder="e.g. Landing Page"]').first();
+        const stepNameInput = page.locator('[data-test="funnel-step-name-input-0"]');
         await stepNameInput.waitFor({ state: 'visible', timeout: 5000 });
         await stepNameInput.fill('Source Step');
 
-        const patternInput = page.locator('.step-card input[placeholder="value to match"]').first();
+        const patternInput = page.locator('[data-test="funnel-step-pattern-input-0"]');
         await patternInput.waitFor({ state: 'visible', timeout: 5000 });
         await patternInput.fill('/source');
 
-        await page.click('input[type="submit"].btn');
+        await page.click('[data-test="funnel-submit-button"]');
         await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
 
         // TEST: Duplicate it
@@ -300,7 +298,7 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
         await page.waitForLoadState('networkidle');
 
         // Verify both exist
-        await expect(page.locator('table.entityTable')).toContainText(originalName);
+        await expect(page.locator('[data-test="funnel-table"]')).toContainText(originalName);
         await expect(page.locator('table.entityTable')).toContainText(`${originalName} (Copy)`);
 
         // CLEANUP: Delete both
@@ -319,29 +317,28 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
 
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
-        await page.waitForSelector('.funnel-editor', { timeout: 15000 });
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
 
-        await page.fill('input#name', deleteName);
+        await page.fill('[data-test="funnel-name-input"]', deleteName);
 
-        const addButton = page.locator('.funnel-editor button:has-text("+ Add Step")');
+        const addButton = page.locator('[data-test="funnel-add-step-button"]');
         await addButton.waitFor({ state: 'visible', timeout: 10000 });
         await addButton.click();
-        await page.waitForSelector('.step-card .step-body', { timeout: 10000 });
-        await page.waitForTimeout(500);
+        await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
 
-        const stepNameInput = page.locator('.step-card input[placeholder="e.g. Landing Page"]').first();
+        const stepNameInput = page.locator('[data-test="funnel-step-name-input-0"]');
         await stepNameInput.waitFor({ state: 'visible', timeout: 5000 });
         await stepNameInput.fill('Delete Step');
 
-        const patternInput = page.locator('.step-card input[placeholder="value to match"]').first();
+        const patternInput = page.locator('[data-test="funnel-step-pattern-input-0"]');
         await patternInput.waitFor({ state: 'visible', timeout: 5000 });
         await patternInput.fill('/delete');
 
-        await page.click('input[type="submit"].btn');
+        await page.click('[data-test="funnel-submit-button"]');
         await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
 
         // Verify funnel exists
-        await expect(page.locator('table.entityTable')).toContainText(deleteName);
+        await expect(page.locator('[data-test="funnel-table"]')).toContainText(deleteName);
 
         // TEST: Delete the funnel
         page.on('dialog', dialog => dialog.accept());
@@ -351,7 +348,128 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
         await page.waitForLoadState('networkidle');
 
         // Verify funnel is gone
-        await expect(page.locator('table.entityTable')).not.toContainText(deleteName);
+        await expect(page.locator('[data-test="funnel-table"]')).not.toContainText(deleteName);
+    });
+});
+
+test.describe('FunnelInsights Controller - Form Submission Tests', () => {
+    const matomoUrl = process.env.MATOMO_URL || 'http://localhost:8080';
+    const matomoUser = process.env.MATOMO_USER || 'admin';
+    const matomoPassword = process.env.MATOMO_PASSWORD || 'adminpassword123';
+    const idSite = process.env.MATOMO_IDSITE || '1';
+
+    test.beforeEach(async ({ page }) => {
+        await loginToMatomo(page, matomoUrl, matomoUser, matomoPassword);
+    });
+
+    test('should submit successfully with required fields only', async ({ page }) => {
+        const funnelName = `E2E Required Fields ${Date.now()}`;
+
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        // Fill ONLY required fields
+        await page.locator('[data-test="funnel-name-input"]').fill(funnelName);
+
+        // Add one step (minimum required)
+        const addButton = page.locator('[data-test="funnel-add-step-button"]');
+        await addButton.click();
+        await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
+
+        const stepNameInput = page.locator('[data-test="funnel-step-name-input-0"]');
+        await stepNameInput.fill('Homepage');
+
+        const patternInput = page.locator('[data-test="funnel-step-pattern-input-0"]');
+        await patternInput.fill('/');
+
+        // Submit form
+        await page.click('[data-test="funnel-submit-button"]');
+
+        // Assert success - redirected to manage page
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+        await expect(page.locator('[data-test="funnel-table"]')).toContainText(funnelName);
+
+        // Cleanup
+        page.on('dialog', dialog => dialog.accept());
+        const row = page.locator(`tr:has-text("${funnelName}")`);
+        await row.locator('a.icon-delete').click();
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+    });
+
+    test('should submit successfully with all fields filled', async ({ page }) => {
+        const funnelName = `E2E All Fields ${Date.now()}`;
+
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        // Fill ALL fields - required
+        await page.locator('[data-test="funnel-name-input"]').fill(funnelName);
+
+        // Fill ALL fields - optional
+        await page.locator('[data-test="funnel-active-select"]').selectOption('1');
+        await page.locator('[data-test="funnel-strict-mode-checkbox"]').check({ force: true });
+        await page.locator('[data-test="funnel-time-limit-input"]').fill('3600');
+
+        // Add a step with all options
+        const addButton = page.locator('[data-test="funnel-add-step-button"]');
+        await addButton.click();
+        await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
+
+        const stepNameInput = page.locator('[data-test="funnel-step-name-input-0"]');
+        await stepNameInput.fill('Checkout Page');
+
+        await page.locator('[data-test="funnel-step-comparison-select-0"]').selectOption('path');
+        await page.locator('[data-test="funnel-step-operator-select-0"]').selectOption('starts_with');
+
+        const patternInput = page.locator('[data-test="funnel-step-pattern-input-0"]');
+        await patternInput.fill('/checkout');
+
+        await page.locator('[data-test="funnel-step-required-checkbox-0"]').check();
+
+        // Add a second step to test multiple steps
+        await addButton.click();
+        await page.waitForSelector('[data-test="funnel-step-card-1"]', { timeout: 10000 });
+
+        await page.locator('[data-test="funnel-step-name-input-1"]').fill('Confirmation Page');
+        await page.locator('[data-test="funnel-step-pattern-input-1"]').fill('/confirmation');
+
+        // Submit form
+        await page.click('[data-test="funnel-submit-button"]');
+
+        // Assert success
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
+        await expect(page.locator('[data-test="funnel-table"]')).toContainText(funnelName);
+
+        // Verify the funnel was created with all the settings by editing it
+        const row = page.locator(`tr:has-text("${funnelName}")`);
+        await row.locator('a.icon-edit').click();
+        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
+
+        // Verify all fields were saved
+        const savedName = await page.locator('[data-test="funnel-name-input"]').inputValue();
+        expect(savedName).toBe(funnelName);
+
+        const savedActive = await page.locator('[data-test="funnel-active-select"]').inputValue();
+        expect(savedActive).toBe('1');
+
+        const savedTimeLimit = await page.locator('[data-test="funnel-time-limit-input"]').inputValue();
+        expect(savedTimeLimit).toBe('3600');
+
+        // Verify steps exist
+        await expect(page.locator('[data-test="funnel-step-card-0"]')).toBeVisible();
+        await expect(page.locator('[data-test="funnel-step-card-1"]')).toBeVisible();
+
+        // Cleanup
+        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
+        await page.waitForLoadState('networkidle');
+
+        page.on('dialog', dialog => dialog.accept());
+        const deleteRow = page.locator(`tr:has-text("${funnelName}")`);
+        await deleteRow.locator('a.icon-delete').click();
+        await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
     });
 });
 
@@ -368,10 +486,10 @@ test.describe('FunnelInsights Controller - Form Validation', () => {
     test('Controller: funnel name is required', async ({ page }) => {
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
-        await page.waitForSelector('.funnel-editor', { timeout: 15000 });
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
 
         // Try to submit without a name
-        const nameInput = page.locator('input#name');
+        const nameInput = page.locator('[data-test="funnel-name-input"]');
         await nameInput.fill('');
 
         // The HTML5 required attribute should prevent submission
@@ -382,9 +500,9 @@ test.describe('FunnelInsights Controller - Form Validation', () => {
     test('Controller: strict_mode checkbox works', async ({ page }) => {
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
-        await page.waitForSelector('.funnel-editor', { timeout: 15000 });
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
 
-        const strictCheckbox = page.locator('input[name="strict_mode"]');
+        const strictCheckbox = page.locator('[data-test="funnel-strict-mode-checkbox"]');
         await expect(strictCheckbox).toBeAttached();
 
         // Toggle it - use force: true to bypass label interception
@@ -398,9 +516,9 @@ test.describe('FunnelInsights Controller - Form Validation', () => {
     test('Controller: step_time_limit accepts numeric values', async ({ page }) => {
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
-        await page.waitForSelector('.funnel-editor', { timeout: 15000 });
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
 
-        const timeLimitInput = page.locator('input#step_time_limit');
+        const timeLimitInput = page.locator('[data-test="funnel-time-limit-input"]');
         await expect(timeLimitInput).toBeVisible();
 
         // Fill with numeric value
@@ -415,9 +533,9 @@ test.describe('FunnelInsights Controller - Form Validation', () => {
     test('Controller: goal_id dropdown is optional', async ({ page }) => {
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
-        await page.waitForSelector('.funnel-editor', { timeout: 15000 });
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
 
-        const goalSelect = page.locator('select#goal_id');
+        const goalSelect = page.locator('[data-test="funnel-goal-select"]');
         await expect(goalSelect).toBeVisible({ timeout: 10000 });
 
         // Should have "No Goal" option - check for empty value option or option text
@@ -431,9 +549,9 @@ test.describe('FunnelInsights Controller - Form Validation', () => {
     test('Controller: active status dropdown works', async ({ page }) => {
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
-        await page.waitForSelector('.funnel-editor', { timeout: 15000 });
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
 
-        const activeSelect = page.locator('select#active');
+        const activeSelect = page.locator('[data-test="funnel-active-select"]');
         await expect(activeSelect).toBeVisible({ timeout: 10000 });
 
         // Should have Yes (1) and No (0) options - check they are attached
@@ -532,11 +650,11 @@ test.describe('FunnelInsights Controller - viewFunnel Dashboard Layout (v3.0.42)
         await page.waitForLoadState('networkidle');
 
         // Verify stat boxes are rendered
-        await expect(page.locator('.funnel-stats')).toBeVisible({ timeout: 10000 });
-        await expect(page.locator('.stat-box').first()).toBeVisible();
+        await expect(page.locator('[data-test="funnel-stats"]')).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('[data-test^="funnel-stat-"]').first()).toBeVisible();
 
         // Should have 3 stat boxes (entries, conversions, rate)
-        const statBoxes = page.locator('.stat-box');
+        const statBoxes = page.locator('[data-test^="funnel-stat-"]');
         await expect(statBoxes).toHaveCount(3);
     });
 
@@ -549,8 +667,8 @@ test.describe('FunnelInsights Controller - viewFunnel Dashboard Layout (v3.0.42)
         await page.waitForLoadState('networkidle');
 
         // Verify navigation buttons are visible
-        const backButton = page.locator('a.btn-flat:has(.icon-arrow-left)');
-        const editButton = page.locator('a.btn:has(.icon-edit)');
+        const backButton = page.locator('[data-test="funnel-back-button"]');
+        const editButton = page.locator('[data-test="funnel-view-edit-button"]');
 
         await expect(backButton).toBeVisible({ timeout: 10000 });
         await expect(editButton).toBeVisible();
@@ -645,10 +763,10 @@ test.describe('FunnelInsights Controller - Navigation', () => {
     test('Controller: cancel button returns to manage page', async ({ page }) => {
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=edit&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
-        await page.waitForSelector('.funnel-editor', { timeout: 15000 });
+        await page.waitForSelector('[data-test="funnel-editor"]', { timeout: 15000 });
 
         // Click cancel button
-        await page.click('a.btn-flat:has-text("Cancel")');
+        await page.click('[data-test="funnel-cancel-button"]');
         await page.waitForURL(/module=FunnelInsights.*action=manage/, { timeout: 30000 });
     });
 
@@ -656,7 +774,7 @@ test.describe('FunnelInsights Controller - Navigation', () => {
         await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=manage&idSite=${idSite}`);
         await page.waitForLoadState('networkidle');
 
-        await page.click('a.btn:has-text("Create")');
+        await page.click('[data-test="funnel-create-button"]');
         await page.waitForURL(/module=FunnelInsights.*action=edit/, { timeout: 30000 });
 
         // Should be on create (no idFunnel parameter)

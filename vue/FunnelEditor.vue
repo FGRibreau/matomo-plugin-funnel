@@ -1,5 +1,5 @@
 <template>
-  <div class="funnel-editor">
+  <div class="funnel-editor" data-test="funnel-editor">
     <h3>Funnel Steps Configuration</h3>
 
     <!-- Helpful info box for users -->
@@ -16,26 +16,26 @@
       No steps defined. Add a step to get started.
     </div>
 
-    <div v-for="(step, index) in steps" :key="index" class="step-card">
+    <div v-for="(step, index) in steps" :key="index" class="step-card" :data-test="`funnel-step-card-${index}`">
       <div class="step-header">
         <span class="step-number">Step {{ index + 1 }}</span>
         <div class="step-actions">
-           <button type="button" @click="moveStep(index, -1)" :disabled="index === 0" title="Move Up">↑</button>
-           <button type="button" @click="moveStep(index, 1)" :disabled="index === steps.length - 1" title="Move Down">↓</button>
-           <button type="button" @click="removeStep(index)" class="btn-danger" title="Remove">×</button>
+           <button type="button" @click="moveStep(index, -1)" :disabled="index === 0" title="Move Up" :data-test="`funnel-step-move-up-${index}`">↑</button>
+           <button type="button" @click="moveStep(index, 1)" :disabled="index === steps.length - 1" title="Move Down" :data-test="`funnel-step-move-down-${index}`">↓</button>
+           <button type="button" @click="removeStep(index)" class="btn-danger" title="Remove" :data-test="`funnel-step-remove-${index}`">×</button>
         </div>
       </div>
 
       <div class="step-body">
         <div class="form-group">
             <label>Name</label>
-            <input type="text" v-model="step.name" class="form-control" placeholder="e.g. Landing Page" required>
+            <input type="text" v-model="step.name" class="form-control" placeholder="e.g. Landing Page" required :data-test="`funnel-step-name-input-${index}`">
         </div>
 
         <div class="form-group inline-conditions">
             <div class="condition-part">
                 <label>Match Type <span class="help-icon" :title="getComparisonHelp(step.comparison)">?</span></label>
-                <select v-model="step.comparison" class="form-control" @change="onComparisonChange(index)">
+                <select v-model="step.comparison" class="form-control" @change="onComparisonChange(index)" :data-test="`funnel-step-comparison-select-${index}`">
                     <option value="path">URL Path (recommended)</option>
                     <option value="url">Full URL (without scheme)</option>
                     <option value="page_title">Page Title</option>
@@ -48,7 +48,7 @@
 
             <div class="condition-part">
                 <label>Operator</label>
-                <select v-model="step.operator" class="form-control">
+                <select v-model="step.operator" class="form-control" :data-test="`funnel-step-operator-select-${index}`">
                     <option value="equals">Equals</option>
                     <option value="contains">Contains</option>
                     <option value="starts_with">Starts with</option>
@@ -59,20 +59,20 @@
 
             <div class="condition-part flex-grow">
                 <label>Pattern</label>
-                <input type="text" v-model="step.pattern" class="form-control" :placeholder="getPatternPlaceholder(step.comparison)">
+                <input type="text" v-model="step.pattern" class="form-control" :placeholder="getPatternPlaceholder(step.comparison)" :data-test="`funnel-step-pattern-input-${index}`">
                 <small class="pattern-hint">{{ getPatternHint(step) }}</small>
             </div>
         </div>
 
         <div class="checkbox">
             <label>
-                <input type="checkbox" v-model="step.required"> Required Step
+                <input type="checkbox" v-model="step.required" :data-test="`funnel-step-required-checkbox-${index}`"> Required Step
             </label>
         </div>
       </div>
     </div>
 
-    <button type="button" @click="addStep" class="btn btn-primary add-step-btn">+ Add Step</button>
+    <button type="button" @click="addStep" class="btn btn-primary add-step-btn" data-test="funnel-add-step-button">+ Add Step</button>
 
     <hr>
 
@@ -80,8 +80,8 @@
         <h4>🧪 Test Your Configuration</h4>
         <p>Enter a test URL to verify which steps match. This helps ensure your funnel will capture the right pages.</p>
         <div class="flex-row">
-            <input type="text" v-model="testValue" class="form-control" placeholder="https://example.com/checkout or /checkout">
-            <button type="button" @click="validate" class="btn btn-success">Test</button>
+            <input type="text" v-model="testValue" class="form-control" placeholder="https://example.com/checkout or /checkout" data-test="funnel-test-input">
+            <button type="button" @click="validate" class="btn btn-success" data-test="funnel-test-button">Test</button>
         </div>
         <small class="test-hint">Tip: For URL Path matching, enter just the path (e.g., <code>/contact</code>). For Full URL, enter without https:// (e.g., <code>example.com/contact</code>).</small>
 
