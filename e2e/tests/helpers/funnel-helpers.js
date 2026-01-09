@@ -70,7 +70,8 @@ export async function createTestFunnel(page, matomoUrl, idSite, name, options = 
     // Get the created funnel ID from manage page
     const row = page.locator(`table.entityTable tbody tr:has-text("${name}")`).first();
     if (await row.count() > 0) {
-        const editLink = row.locator('a[href*="idFunnel="]');
+        // Use the Edit link specifically (icon-edit class) to avoid matching Duplicate/Delete links
+        const editLink = row.locator('a.icon-edit[href*="idFunnel="]');
         const href = await editLink.getAttribute('href');
         const match = href ? href.match(/idFunnel=(\d+)/) : null;
         return match ? parseInt(match[1]) : null;
@@ -200,7 +201,8 @@ export async function getFunnelIdByName(page, matomoUrl, idSite, name) {
 
     const row = page.locator(`table.entityTable tbody tr:has-text("${name}")`).first();
     if (await row.count() > 0) {
-        const editLink = row.locator('a[href*="idFunnel="]');
+        // Use the Edit link specifically (icon-edit class) to avoid matching Duplicate/Delete links
+        const editLink = row.locator('a.icon-edit[href*="idFunnel="]');
         const href = await editLink.getAttribute('href');
         const match = href ? href.match(/idFunnel=(\d+)/) : null;
         return match ? parseInt(match[1]) : null;
