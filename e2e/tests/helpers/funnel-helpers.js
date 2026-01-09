@@ -43,15 +43,15 @@ export async function createTestFunnel(page, matomoUrl, idSite, name, options = 
     await stepNameInput.waitFor({ state: 'visible', timeout: 5000 });
     await stepNameInput.fill(options.stepName || 'Homepage');
 
-    // The comparison select is already set to 'path' by default, so we only need to change if different
-    if (options.comparison && options.comparison !== 'path') {
-        const comparisonSelect = page.locator('.step-card .inline-conditions select').first();
+    // The comparison select is already set to 'url' by default, change if needed
+    if (options.comparison && options.comparison !== 'url') {
+        const comparisonSelect = page.locator('.step-card .condition-group select.form-control').first();
         await comparisonSelect.waitFor({ state: 'visible', timeout: 5000 });
         await comparisonSelect.selectOption(options.comparison);
     }
 
-    // Fill pattern (the input inside inline-conditions, after the selects)
-    const patternInput = page.locator('.step-card .inline-conditions input.form-control').first();
+    // Fill pattern (the input with placeholder "value to match")
+    const patternInput = page.locator('.step-card input[placeholder="value to match"]').first();
     await patternInput.waitFor({ state: 'visible', timeout: 5000 });
     await patternInput.fill(options.pattern || '/');
 

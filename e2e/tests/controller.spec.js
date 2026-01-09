@@ -232,7 +232,7 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
         await stepNameInput.waitFor({ state: 'visible', timeout: 5000 });
         await stepNameInput.fill('Test Step');
 
-        const patternInput = page.locator('.step-card .inline-conditions input.form-control').first();
+        const patternInput = page.locator('.step-card input[placeholder="value to match"]').first();
         await patternInput.waitFor({ state: 'visible', timeout: 5000 });
         await patternInput.fill('/test-url');
 
@@ -285,7 +285,7 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
         await stepNameInput.waitFor({ state: 'visible', timeout: 5000 });
         await stepNameInput.fill('Source Step');
 
-        const patternInput = page.locator('.step-card .inline-conditions input.form-control').first();
+        const patternInput = page.locator('.step-card input[placeholder="value to match"]').first();
         await patternInput.waitFor({ state: 'visible', timeout: 5000 });
         await patternInput.fill('/source');
 
@@ -333,7 +333,7 @@ test.describe('FunnelInsights Controller - Authenticated Access', () => {
         await stepNameInput.waitFor({ state: 'visible', timeout: 5000 });
         await stepNameInput.fill('Delete Step');
 
-        const patternInput = page.locator('.step-card .inline-conditions input.form-control').first();
+        const patternInput = page.locator('.step-card input[placeholder="value to match"]').first();
         await patternInput.waitFor({ state: 'visible', timeout: 5000 });
         await patternInput.fill('/delete');
 
