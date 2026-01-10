@@ -68,10 +68,10 @@ Define funnel steps with flexible matching options - URL, path, page title, even
 
 ![Create Funnel](docs/screenshots/03-create-funnel.png)
 
-### Dashboard Widget
-Add the funnel overview widget to any Matomo dashboard for quick access to conversion metrics.
+### View Funnel Report
+Analyze funnel performance with detailed metrics including total entries, conversions, and conversion rates.
 
-![Dashboard Widget](docs/screenshots/07-widget-overview.png)
+![Funnel Report](docs/screenshots/04-view-funnel.png)
 
 ---
 
