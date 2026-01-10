@@ -8,6 +8,8 @@ A powerful analytics plugin for [Matomo](https://matomo.org/) that enables you t
 
 Understand where visitors drop off in your checkout process, signup flow, or any multi-step journey on your website.
 
+![FunnelInsights - Funnel Analysis](docs/screenshots/04-view-funnel.png)
+
 ---
 
 ## Table of Contents
