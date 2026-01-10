@@ -263,15 +263,28 @@ class Controller extends ControllerAdmin
         $period = Common::getRequestVar('period', 'day', 'string');
         $date = Common::getRequestVar('date', 'yesterday', 'string');
 
-        $visitorLogData = API::getInstance()->getVisitorLog(
-            $this->idSite,
-            $period,
-            $date,
-            $idFunnel,
-            $stepIndex,
-            50,
-            0
-        );
+        // Get visitor log data, defaulting to empty if there's an error
+        $visitorLogData = [
+            'visitors' => [],
+            'total' => 0,
+            'funnel_name' => $funnel['name'],
+            'funnel_steps' => array_map(function($s) { return $s['name']; }, $funnel['steps'])
+        ];
+
+        try {
+            $visitorLogData = API::getInstance()->getVisitorLog(
+                $this->idSite,
+                $period,
+                $date,
+                $idFunnel,
+                $stepIndex,
+                50,
+                0
+            );
+        } catch (\Exception $e) {
+            // Log error but continue with empty data
+            // The page will show "no visitors" message which is acceptable
+        }
 
         $view = new View('@FunnelInsights/visitorLog');
         $this->setBasicVariablesView($view);

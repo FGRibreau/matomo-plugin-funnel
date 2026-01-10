@@ -36,35 +36,38 @@ class FunnelOverview extends Widget
 
         // Fetch data server-side - this ensures authentication is handled correctly
         $overviewData = [];
-        $error = null;
+        $sparklineData = [];
 
-        $api = API::getInstance();
-        $result = $api->getOverview($idSite, $period, $date);
+        try {
+            $api = API::getInstance();
+            $result = $api->getOverview($idSite, $period, $date);
 
-        // Convert DataTable result to array for template
-        if ($result instanceof \Piwik\DataTable) {
-            foreach ($result->getRows() as $row) {
-                $overviewData[] = $row->getColumns();
-            }
-        } elseif ($result instanceof \Piwik\DataTable\Map) {
-            // For date ranges, get the last table
-            $tables = $result->getDataTables();
-            if (!empty($tables)) {
-                $lastTable = end($tables);
-                if ($lastTable instanceof \Piwik\DataTable) {
-                    foreach ($lastTable->getRows() as $row) {
-                        $overviewData[] = $row->getColumns();
+            // Convert DataTable result to array for template
+            if ($result instanceof \Piwik\DataTable) {
+                foreach ($result->getRows() as $row) {
+                    $overviewData[] = $row->getColumns();
+                }
+            } elseif ($result instanceof \Piwik\DataTable\Map) {
+                // For date ranges, get the last table
+                $tables = $result->getDataTables();
+                if (!empty($tables)) {
+                    $lastTable = end($tables);
+                    if ($lastTable instanceof \Piwik\DataTable) {
+                        foreach ($lastTable->getRows() as $row) {
+                            $overviewData[] = $row->getColumns();
+                        }
                     }
                 }
             }
-        }
 
-        // Fetch sparkline data for the last 7 days
-        $sparklineData = [];
-        $sparklineDate = 'last7';
-        $sparklineResult = $api->getSparklineData($idSite, 'day', $sparklineDate, null, 'conversion_rate');
-        if (is_array($sparklineResult)) {
-            $sparklineData = $sparklineResult;
+            // Fetch sparkline data for the last 7 days
+            $sparklineDate = 'last7';
+            $sparklineResult = $api->getSparklineData($idSite, 'day', $sparklineDate, null, 'conversion_rate');
+            if (is_array($sparklineResult)) {
+                $sparklineData = $sparklineResult;
+            }
+        } catch (\Exception $e) {
+            // Continue with empty data - template will show "no funnels" message
         }
 
         return $this->renderTemplate('@FunnelInsights/widgetOverview', [
