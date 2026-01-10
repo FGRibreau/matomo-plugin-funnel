@@ -38,6 +38,6 @@ class PluginVersionTest extends TestCase
 
     public function testPluginLicense()
     {
-        $this->assertEquals('GPL-3.0+', $this->pluginJson['license'], 'Plugin license should be GPL-3.0+');
+        $this->assertEquals('MIT', $this->pluginJson['license'], 'Plugin license should be MIT');
     }
 }

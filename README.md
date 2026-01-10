@@ -4,7 +4,7 @@
   <img src="docs/funnel-animation.svg" alt="FunnelInsights - Funnel Analytics Visualization" width="100%">
 </p>
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PHP Version](https://img.shields.io/badge/php-%3E%3D7.4-8892BF.svg)](https://php.net/)
 [![Matomo Version](https://img.shields.io/badge/matomo-%3E%3D5.0.0-3152A0.svg)](https://matomo.org/)
 
@@ -467,14 +467,7 @@ Contributions are welcome! Here's how to get started:
 
 ## License
 
-This project is licensed under the **GNU General Public License v3.0** - see the [LICENSE](LICENSE) file for details.
-
-```
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-```
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
 ---
 
@@ -482,7 +475,6 @@ the Free Software Foundation, either version 3 of the License, or
 
 - **Documentation:** [User Guide](docs/user_guide.md)
 - **Issues:** [GitHub Issues](https://github.com/fgribreau/matomo-plugin-funnel/issues)
-- **Matomo Forums:** [forum.matomo.org](https://forum.matomo.org/)
 
 ---
 
