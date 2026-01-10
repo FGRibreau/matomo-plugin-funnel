@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200">
+  <defs>
+    <linearGradient id="funnelGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3152A0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a3a6e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="successGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="200" fill="#0d1117"/>
+
+  <!-- Funnel Shape -->
+  <path d="M200,30 L600,30 L520,170 L280,170 Z" fill="url(#funnelGradient)" opacity="0.9"/>
+
+  <!-- Funnel Steps Lines -->
+  <line x1="230" y1="65" x2="570" y2="65" stroke="#4a6da7" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="260" y1="100" x2="540" y2="100" stroke="#4a6da7" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="290" y1="135" x2="510" y2="135" stroke="#4a6da7" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- Step Labels -->
+  <text x="400" y="52" fill="#a3c4f3" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">Step 1 - Entry</text>
+  <text x="400" y="87" fill="#a3c4f3" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">Step 2</text>
+  <text x="400" y="122" fill="#a3c4f3" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">Step 3</text>
+  <text x="400" y="157" fill="#22c55e" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle" font-weight="bold">Conversion</text>
+
+  <!-- Animated Dots - Visitors flowing through funnel -->
+  <!-- Row 1 - Many dots entering -->
+  <circle r="4" fill="#60a5fa" filter="url(#glow)">
+    <animate attributeName="cy" values="25;175" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="cx" values="300;320" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="1;1;0" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle r="4" fill="#60a5fa" filter="url(#glow)">
+    <animate attributeName="cy" values="25;175" dur="3s" repeatCount="indefinite" begin="0.2s"/>
+    <animate attributeName="cx" values="350;370" dur="3s" repeatCount="indefinite" begin="0.2s"/>
+    <animate attributeName="opacity" values="1;1;0" dur="3s" repeatCount="indefinite" begin="0.2s"/>
+  </circle>
+  <circle r="4" fill="#60a5fa" filter="url(#glow)">
+    <animate attributeName="cy" values="25;175" dur="3s" repeatCount="indefinite" begin="0.4s"/>
+    <animate attributeName="cx" values="400;400" dur="3s" repeatCount="indefinite" begin="0.4s"/>
+    <animate attributeName="opacity" values="1;1;0" dur="3s" repeatCount="indefinite" begin="0.4s"/>
+  </circle>
+  <circle r="4" fill="#60a5fa" filter="url(#glow)">
+    <animate attributeName="cy" values="25;175" dur="3s" repeatCount="indefinite" begin="0.6s"/>
+    <animate attributeName="cx" values="450;430" dur="3s" repeatCount="indefinite" begin="0.6s"/>
+    <animate attributeName="opacity" values="1;1;0" dur="3s" repeatCount="indefinite" begin="0.6s"/>
+  </circle>
+  <circle r="4" fill="#60a5fa" filter="url(#glow)">
+    <animate attributeName="cy" values="25;175" dur="3s" repeatCount="indefinite" begin="0.8s"/>
+    <animate attributeName="cx" values="500;480" dur="3s" repeatCount="indefinite" begin="0.8s"/>
+    <animate attributeName="opacity" values="1;1;0" dur="3s" repeatCount="indefinite" begin="0.8s"/>
+  </circle>
+
+  <!-- Drop-off dots - exiting sideways -->
+  <circle r="3" fill="#f87171" opacity="0.8">
+    <animate attributeName="cy" values="65;65;80" dur="2.5s" repeatCount="indefinite" begin="1s"/>
+    <animate attributeName="cx" values="550;620;680" dur="2.5s" repeatCount="indefinite" begin="1s"/>
+    <animate attributeName="opacity" values="0;0.8;0" dur="2.5s" repeatCount="indefinite" begin="1s"/>
+  </circle>
+  <circle r="3" fill="#f87171" opacity="0.8">
+    <animate attributeName="cy" values="100;100;120" dur="2.5s" repeatCount="indefinite" begin="1.5s"/>
+    <animate attributeName="cx" values="520;590;650" dur="2.5s" repeatCount="indefinite" begin="1.5s"/>
+    <animate attributeName="opacity" values="0;0.8;0" dur="2.5s" repeatCount="indefinite" begin="1.5s"/>
+  </circle>
+  <circle r="3" fill="#f87171" opacity="0.8">
+    <animate attributeName="cy" values="65;65;50" dur="2.5s" repeatCount="indefinite" begin="0.7s"/>
+    <animate attributeName="cx" values="250;180;120" dur="2.5s" repeatCount="indefinite" begin="0.7s"/>
+    <animate attributeName="opacity" values="0;0.8;0" dur="2.5s" repeatCount="indefinite" begin="0.7s"/>
+  </circle>
+
+  <!-- Conversion pulse at bottom -->
+  <circle cx="400" cy="185" r="8" fill="#22c55e" opacity="0.6">
+    <animate attributeName="r" values="8;15;8" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="400" cy="185" r="5" fill="#22c55e"/>
+
+  <!-- Stats on sides -->
+  <g transform="translate(50, 60)">
+    <text fill="#9ca3af" font-family="system-ui, sans-serif" font-size="10">ENTRIES</text>
+    <text y="20" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="22" font-weight="bold">10,247</text>
+    <text y="20" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="22" font-weight="bold">
+      <animate attributeName="opacity" values="1;0.7;1" dur="2s" repeatCount="indefinite"/>
+    </text>
+  </g>
+
+  <g transform="translate(650, 60)">
+    <text fill="#9ca3af" font-family="system-ui, sans-serif" font-size="10">CONVERTED</text>
+    <text y="20" fill="#22c55e" font-family="system-ui, sans-serif" font-size="22" font-weight="bold">2,847</text>
+  </g>
+
+  <g transform="translate(650, 120)">
+    <text fill="#9ca3af" font-family="system-ui, sans-serif" font-size="10">RATE</text>
+    <text y="20" fill="#22c55e" font-family="system-ui, sans-serif" font-size="22" font-weight="bold">27.8%</text>
+    <text y="20" fill="#22c55e" font-family="system-ui, sans-serif" font-size="22" font-weight="bold">
+      <animate attributeName="opacity" values="1;0.7;1" dur="1.5s" repeatCount="indefinite"/>
+    </text>
+  </g>
+
+  <!-- Drop-off indicator -->
+  <g transform="translate(50, 130)">
+    <text fill="#9ca3af" font-family="system-ui, sans-serif" font-size="10">DROP-OFFS</text>
+    <text y="20" fill="#f87171" font-family="system-ui, sans-serif" font-size="18" font-weight="bold">7,400</text>
+  </g>
+</svg>

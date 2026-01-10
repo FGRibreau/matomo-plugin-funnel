@@ -1,5 +1,9 @@
 # Matomo Funnels Plugin
 
+<p align="center">
+  <img src="docs/funnel-animation.svg" alt="FunnelInsights - Funnel Analytics Visualization" width="100%">
+</p>
+
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![PHP Version](https://img.shields.io/badge/php-%3E%3D7.4-8892BF.svg)](https://php.net/)
 [![Matomo Version](https://img.shields.io/badge/matomo-%3E%3D5.0.0-3152A0.svg)](https://matomo.org/)
@@ -7,6 +11,9 @@
 A powerful analytics plugin for [Matomo](https://matomo.org/) that enables you to define, track, and analyze visitor paths (funnels) towards conversion goals.
 
 Understand where visitors drop off in your checkout process, signup flow, or any multi-step journey on your website.
+
+> [!TIP]
+> **Query your funnels with AI!** Use [MCP Matomo](https://github.com/FGRibreau/mcp-matomo) to ask Claude questions about your funnel data in natural language. _"What's my checkout funnel conversion rate this week?"_ - and get instant answers from your analytics.
 
 ![FunnelInsights - Funnel Analysis](docs/screenshots/04-view-funnel.png)
 
@@ -216,12 +223,10 @@ Access funnel reports from your Matomo dashboard:
 
 ### Using Segments
 
-Filter your reports to visitors who participated in funnels:
+Filter your reports by funnel name:
 
 1. Click **Add Segment** in any Matomo report
-2. Choose from:
-   - `Funnel Participated` - Visitors who entered any funnel
-   - `Funnel Participated Step` - Visitors at a specific step position
+2. Add condition: `Funnel Name` equals/contains your funnel name
 
 ### API Access
 

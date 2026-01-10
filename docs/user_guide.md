@@ -2,7 +2,7 @@
 
 Ce guide vous aide à comprendre et utiliser le plugin Funnels pour Matomo 5.x.
 
-> **Version 2.0.0** - Compatible avec Matomo 5.0.0 et versions supérieures.
+> **Version 3.x** - Compatible avec Matomo 5.0.0 et versions supérieures.
 >
 > **Prérequis:** Matomo 5.0.0+, PHP 7.4+, MySQL 5.7+ / MariaDB 10.3+
 
@@ -76,9 +76,8 @@ Affiche la visualisation du flux et un tableau détaillé :
 
 ## 4. Intégration
 
-*   **Segments :** Deux nouveaux segments sont disponibles :
-    *   `Visit participated in funnel` : Pour filtrer toutes les visites ayant touché une étape de n'importe quel entonnoir.
-    *   `Visit participated in funnel at step position` : Pour filtrer les visites ayant touché une étape spécifique (ex: `funnel_participated_step==2`).
+*   **Segments :** Un segment est disponible :
+    *   `Funnel Name` : Pour filtrer les rapports par nom d'entonnoir.
 *   **API de Reporting :** Toutes les données sont accessibles via l'API de reporting HTTP de Matomo.
 *   **Alertes Personnalisées :** Vous pouvez configurer des alertes pour surveiller les métriques de l'entonnoir (taux de conversion, nombre de conversions).
 
