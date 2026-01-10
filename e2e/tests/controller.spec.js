@@ -426,7 +426,7 @@ test.describe('FunnelInsights Controller - Form Submission Tests', () => {
         const patternInput = page.locator('[data-test="funnel-step-pattern-input-0"]');
         await patternInput.fill('/checkout');
 
-        await page.locator('[data-test="funnel-step-required-checkbox-0"]').check();
+        await page.locator('[data-test="funnel-step-required-checkbox-0"]').check({ force: true });
 
         // Add a second step to test multiple steps
         await addButton.click();
@@ -1252,7 +1252,7 @@ test.describe('FunnelInsights Controller - Required Steps', () => {
         await page.waitForSelector('[data-test="funnel-step-card-0"]', { timeout: 10000 });
         await page.locator('[data-test="funnel-step-name-input-0"]').fill('Required Step');
         await page.locator('[data-test="funnel-step-pattern-input-0"]').fill('/required');
-        await page.locator('[data-test="funnel-step-required-checkbox-0"]').check();
+        await page.locator('[data-test="funnel-step-required-checkbox-0"]').check({ force: true });
 
         // Add second step (not required)
         await addButton.click();
