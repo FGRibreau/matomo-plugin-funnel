@@ -39,6 +39,7 @@ Understand where visitors drop off in your checkout process, signup flow, or any
   - [Running Tests](#running-tests)
 - [CLI Commands](#cli-commands)
 - [Contributing](#contributing)
+- [Sponsors](#sponsors)
 - [License](#license)
 - [Support](#support)
 
@@ -422,6 +423,45 @@ Contributions are welcome! Here's how to get started:
 - Write tests for new features
 - Update documentation as needed
 - Keep commits focused and atomic
+
+---
+
+## Sponsors
+
+<table>
+  <tr>
+    <td align="center" width="200">
+        <a href="https://getnatalia.com/">
+        <img src="assets/sponsors/natalia.svg" height="60" alt="Natalia"/><br/>
+        <b>Natalia</b>
+        </a><br/>
+        <sub>24/7 AI voice and whatsapp agent for customer services</sub>
+    </td>
+    <td align="center" width="200">
+      <a href="https://nobullshitconseil.com/">
+        <img src="assets/sponsors/nobullshitconseil.svg" height="60" alt="NoBullshitConseil"/><br/>
+        <b>NoBullshitConseil</b>
+      </a><br/>
+      <sub>360° tech consulting</sub>
+    </td>
+    <td align="center" width="200">
+      <a href="https://www.hook0.com/">
+        <img src="assets/sponsors/hook0.png" height="60" alt="Hook0"/><br/>
+        <b>Hook0</b>
+      </a><br/>
+      <sub>Open-Source Webhooks-as-a-Service</sub>
+    </td>
+    <td align="center" width="200">
+      <a href="https://france-nuage.fr/">
+        <img src="assets/sponsors/france-nuage.png" height="60" alt="France-Nuage"/><br/>
+        <b>France-Nuage</b>
+      </a><br/>
+      <sub>Sovereign cloud hosting in France</sub>
+    </td>
+  </tr>
+</table>
+
+> **Interested in sponsoring?** [Get in touch](mailto:matomo@fgribreau.com)
 
 ---
 
