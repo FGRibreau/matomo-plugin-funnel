@@ -25,8 +25,6 @@ Understand where visitors drop off in your checkout process, signup flow, or any
 - [Screenshots](#screenshots)
 - [Requirements](#requirements)
 - [Installation](#installation)
-  - [Option 1: Manual Installation](#option-1-manual-installation)
-  - [Option 2: Matomo Marketplace](#option-2-matomo-marketplace)
 - [Configuration](#configuration)
   - [Creating Your First Funnel](#creating-your-first-funnel)
   - [Step Configuration Options](#step-configuration-options)
@@ -101,8 +99,6 @@ Before installing, ensure you have:
 
 ## Installation
 
-### Option 1: Manual Installation
-
 **Step 1: Download the plugin**
 
 ```bash
@@ -126,14 +122,6 @@ cd /path/to/your/matomo
 3. Confirm "FunnelInsights" appears in the list and is activated
 
 The plugin will automatically create the required database table (`matomo_log_funnel`) during activation.
-
-### Option 2: Matomo Marketplace
-
-1. Log in to your Matomo dashboard as a Super User
-2. Go to **Administration** → **Platform** → **Marketplace**
-3. Search for "FunnelInsights"
-4. Click **Install**
-5. Click **Activate**
 
 ---
 
