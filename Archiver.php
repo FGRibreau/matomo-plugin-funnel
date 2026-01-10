@@ -57,17 +57,18 @@ class Archiver extends AbstractArchiver
         $bind = array($idSite, $dateStart, $dateEnd);
 
         do {
+            // Note: LIMIT/OFFSET must be interpolated directly (not as bound params)
+            // because MariaDB/MySQL treat bound LIMIT params as strings
             $sqlVisits = "
                 SELECT DISTINCT l.idvisit
                 FROM {$logLinkVisitAction} AS l
                 LEFT JOIN {$logVisit} AS v ON l.idvisit = v.idvisit
                 WHERE l.idsite = ? AND l.server_time >= ? AND l.server_time <= ?
                 ORDER BY l.idvisit
-                LIMIT ? OFFSET ?
+                LIMIT " . (int)$limit . " OFFSET " . (int)$offset . "
             ";
-            $bindVisits = array_merge($bind, array($limit, $offset));
 
-            $visitIdsRows = Db::get()->fetchAll($sqlVisits, $bindVisits);
+            $visitIdsRows = Db::get()->fetchAll($sqlVisits, $bind);
             $visitIds = array_map(function($r) { return $r['idvisit']; }, $visitIdsRows);
             
             if (empty($visitIds)) {

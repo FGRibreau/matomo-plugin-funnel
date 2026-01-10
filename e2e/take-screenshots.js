@@ -132,8 +132,9 @@ async function main() {
   }
 
   // Step 5: View a specific funnel report (the main visualization)
+  // Use specific date where we have archive data
   console.log('\n=== Step 5: View Funnel Report ===');
-  await page.goto(`${MATOMO_URL}/index.php?module=FunnelInsights&action=viewFunnel&idSite=1&period=day&date=yesterday&idFunnel=1`);
+  await page.goto(`${MATOMO_URL}/index.php?module=FunnelInsights&action=viewFunnel&idSite=1&period=day&date=2026-01-09&idFunnel=1`);
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(2000);
 
