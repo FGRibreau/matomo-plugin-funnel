@@ -76,8 +76,6 @@ Affiche la visualisation du flux et un tableau détaillé :
 
 ## 4. Intégration
 
-*   **Segments :** Un segment est disponible :
-    *   `Funnel Name` : Pour filtrer les rapports par nom d'entonnoir.
 *   **API de Reporting :** Toutes les données sont accessibles via l'API de reporting HTTP de Matomo.
 *   **Alertes Personnalisées :** Vous pouvez configurer des alertes pour surveiller les métriques de l'entonnoir (taux de conversion, nombre de conversions).
 
@@ -87,4 +85,4 @@ Si vos rapports ne s'affichent pas ou semblent incorrects :
 *   Vérifiez que l'entonnoir est `Actif`.
 *   Assurez-vous que l'archivage Matomo s'exécute correctement (via cron).
 *   Utilisez l'outil `Validate Steps` pour vérifier la correspondance de vos patterns.
-*   Si vous avez modifié un entonnoir, les rapports passés peuvent être invalidés et devront être ré-archivés. Vous pouvez utiliser la commande CLI : `./console funnels:rearchive --idsite=X --idfunnel=Y` pour forcer le recalcul.
+*   Si vous avez modifié un entonnoir, utilisez la commande CLI `./console funnels:rearchive --idsite=X --idfunnel=Y` pour invalider les rapports du jour, puis exécutez `core:archive` pour les recalculer.

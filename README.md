@@ -30,7 +30,6 @@ Understand where visitors drop off in your checkout process, signup flow, or any
   - [Step Configuration Options](#step-configuration-options)
 - [Usage](#usage)
   - [Viewing Reports](#viewing-reports)
-  - [Using Segments](#using-segments)
   - [API Access](#api-access)
 - [Development Setup](#development-setup)
   - [Using Docker](#using-docker)
@@ -51,8 +50,6 @@ Understand where visitors drop off in your checkout process, signup flow, or any
 - **Goal Integration** - Link funnels to existing Matomo Goals for conversion tracking
 - **Standalone Funnels** - Create funnels without requiring a Goal
 - **Strict Mode** - Enforce exact path following for accurate analysis
-- **Historical Data** - Re-process past data when creating new funnels
-- **Segmentation** - Filter visitors who participated in specific funnels
 - **Custom Alerts** - Get notified when conversion rates change
 - **Privacy-First** - 100% data ownership, GDPR compliant, no external data sharing
 - **Performance Optimized** - Reports generated during offline archiving
@@ -199,9 +196,9 @@ Access funnel reports from your Matomo dashboard:
 
 | Report | Description |
 |--------|-------------|
-| **Funnel Overview** | Visual funnel with drop-off rates at each step |
+| **Funnel Overview** | Summary of all funnels with key metrics |
+| **Funnel Details** | Visual funnel with drop-off rates at each step |
 | **Funnel Evolution** | Conversion trends over time |
-| **Step Details** | Detailed metrics per step |
 
 **Key Metrics:**
 
@@ -209,13 +206,6 @@ Access funnel reports from your Matomo dashboard:
 - **Proceeds** - Visitors continuing to next step
 - **Drop-offs** - Visitors leaving the funnel
 - **Conversion Rate** - Percentage completing all steps
-
-### Using Segments
-
-Filter your reports by funnel name:
-
-1. Click **Add Segment** in any Matomo report
-2. Add condition: `Funnel Name` equals/contains your funnel name
 
 ### API Access
 
