@@ -462,7 +462,7 @@ class API extends \Piwik\Plugin\API
             return $resultMap;
         }
 
-        // For date ranges
+        // For date ranges (Map) or any other case
         if ($result instanceof Map) {
             foreach ($result->getDataTables() as $dateKey => $table) {
                 $stepTable = $this->extractStepRow($table, $stepIndex);
@@ -474,7 +474,6 @@ class API extends \Piwik\Plugin\API
                 }
                 $resultMap->addTable($stepTable, $dateKey);
             }
-            return $resultMap;
         }
 
         return $resultMap;
@@ -683,8 +682,8 @@ class API extends \Piwik\Plugin\API
             }
 
             ksort($stepsHit);
-            $entry = count($stepsHit) > 0 ? min(array_keys($stepsHit)) : null;
-            $exit = count($stepsHit) > 0 ? max(array_keys($stepsHit)) : null;
+            $entry = min(array_keys($stepsHit));
+            $exit = max(array_keys($stepsHit));
             $completed = count($stepsHit);
 
             $result[] = array(
