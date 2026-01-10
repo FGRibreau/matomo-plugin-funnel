@@ -1446,8 +1446,14 @@ test.describe('FunnelInsights Controller - Visitor Log', () => {
         expect(idFunnel).toBeTruthy();
 
         // TEST: Navigate to visitor log
-        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=visitorLog&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        const visitorLogUrl = `${matomoUrl}/index.php?module=FunnelInsights&action=visitorLog&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`;
+        await page.goto(visitorLogUrl);
         await page.waitForLoadState('networkidle');
+
+        // Verify we're on the right page (not redirected)
+        const currentUrl = page.url();
+        expect(currentUrl).toContain('action=visitorLog');
+        expect(currentUrl).toContain(`idFunnel=${idFunnel}`);
 
         const content = await page.content();
         expect(content).not.toContain('Fatal error');
@@ -1474,8 +1480,15 @@ test.describe('FunnelInsights Controller - Visitor Log', () => {
         expect(idFunnel).toBeTruthy();
 
         // TEST: Navigate to visitor log
-        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=visitorLog&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        const visitorLogUrl = `${matomoUrl}/index.php?module=FunnelInsights&action=visitorLog&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`;
+        await page.goto(visitorLogUrl);
         await page.waitForLoadState('networkidle');
+
+        // Verify we're on the right page (not redirected)
+        const currentUrl = page.url();
+        expect(currentUrl).toContain('action=visitorLog');
+        expect(currentUrl).toContain(`idFunnel=${idFunnel}`);
+
         await page.waitForSelector('[data-test="visitor-log-back-button"]', { timeout: 15000 });
 
         // Click back button
@@ -1527,8 +1540,14 @@ test.describe('FunnelInsights Controller - Visitor Log', () => {
         expect(idFunnel).toBeTruthy();
 
         // TEST: Navigate to visitor log
-        await page.goto(`${matomoUrl}/index.php?module=FunnelInsights&action=visitorLog&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`);
+        const visitorLogUrl = `${matomoUrl}/index.php?module=FunnelInsights&action=visitorLog&idSite=${idSite}&idFunnel=${idFunnel}&period=day&date=yesterday`;
+        await page.goto(visitorLogUrl);
         await page.waitForLoadState('networkidle');
+
+        // Verify we're on the right page (not redirected)
+        const currentUrl = page.url();
+        expect(currentUrl).toContain('action=visitorLog');
+        expect(currentUrl).toContain(`idFunnel=${idFunnel}`);
 
         // Should show either the table or the no-data message
         const noDataMessage = page.locator('[data-test="visitor-log-no-data"]');
@@ -1722,9 +1741,9 @@ test.describe('FunnelInsights Widget - Overview Sparklines', () => {
     });
 
     test('Widget: overview widget displays with data-test attributes', async ({ page }) => {
-        // Navigate to a dashboard or widget page that includes the overview widget
-        // The widget URL depends on Matomo setup, try the direct widget URL
-        await page.goto(`${matomoUrl}/index.php?module=Widgetize&action=iframe&widget=1&moduleToWidgetize=FunnelInsights&actionToWidgetize=FunnelOverview&idSite=${idSite}&period=day&date=yesterday`);
+        // Navigate to the widget via Widgetize module
+        const widgetUrl = `${matomoUrl}/index.php?module=Widgetize&action=iframe&moduleToWidgetize=FunnelInsights&actionToWidgetize=FunnelOverview&idSite=${idSite}&period=day&date=yesterday`;
+        await page.goto(widgetUrl);
         await page.waitForLoadState('networkidle');
 
         const content = await page.content();
@@ -1746,7 +1765,8 @@ test.describe('FunnelInsights Widget - Overview Sparklines', () => {
         expect(idFunnel).toBeTruthy();
 
         // TEST: Navigate to widget
-        await page.goto(`${matomoUrl}/index.php?module=Widgetize&action=iframe&widget=1&moduleToWidgetize=FunnelInsights&actionToWidgetize=FunnelOverview&idSite=${idSite}&period=day&date=yesterday`);
+        const widgetUrl = `${matomoUrl}/index.php?module=Widgetize&action=iframe&moduleToWidgetize=FunnelInsights&actionToWidgetize=FunnelOverview&idSite=${idSite}&period=day&date=yesterday`;
+        await page.goto(widgetUrl);
         await page.waitForLoadState('networkidle');
 
         // Should have table
@@ -1771,7 +1791,8 @@ test.describe('FunnelInsights Widget - Overview Sparklines', () => {
         expect(idFunnel).toBeTruthy();
 
         // TEST: Navigate to widget
-        await page.goto(`${matomoUrl}/index.php?module=Widgetize&action=iframe&widget=1&moduleToWidgetize=FunnelInsights&actionToWidgetize=FunnelOverview&idSite=${idSite}&period=day&date=yesterday`);
+        const widgetUrl = `${matomoUrl}/index.php?module=Widgetize&action=iframe&moduleToWidgetize=FunnelInsights&actionToWidgetize=FunnelOverview&idSite=${idSite}&period=day&date=yesterday`;
+        await page.goto(widgetUrl);
         await page.waitForLoadState('networkidle');
 
         // Should have funnel row
@@ -1796,7 +1817,8 @@ test.describe('FunnelInsights Widget - Overview Sparklines', () => {
     test('Widget: overview shows empty state when no funnels', async ({ page }) => {
         // This test assumes we can test with a site that has no funnels
         // We'll just verify the structure exists
-        await page.goto(`${matomoUrl}/index.php?module=Widgetize&action=iframe&widget=1&moduleToWidgetize=FunnelInsights&actionToWidgetize=FunnelOverview&idSite=${idSite}&period=day&date=yesterday`);
+        const widgetUrl = `${matomoUrl}/index.php?module=Widgetize&action=iframe&moduleToWidgetize=FunnelInsights&actionToWidgetize=FunnelOverview&idSite=${idSite}&period=day&date=yesterday`;
+        await page.goto(widgetUrl);
         await page.waitForLoadState('networkidle');
 
         const widget = page.locator('[data-test="funnel-overview-widget"]');
