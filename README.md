@@ -87,7 +87,7 @@ Before installing, ensure you have:
 | PHP | 7.4 or higher |
 | MySQL/MariaDB | 5.7+ / 10.3+ |
 
-> **Note:** This version (2.0.0) is specifically designed for Matomo 5.x. For Matomo 4.x support, please use version 1.x of this plugin.
+> **Note:** This plugin (v3.x) is specifically designed for Matomo 5.x.
 
 ---
 
@@ -99,30 +99,23 @@ Before installing, ensure you have:
 
 ```bash
 cd /path/to/your/matomo/plugins
-git clone https://github.com/fgribreau/matomo-plugin-funnel.git Funnels
+git clone https://github.com/fgribreau/matomo-plugin-funnel.git FunnelInsights
 ```
 
-> **Note:** The folder name must be `Funnels` (case-sensitive).
+> **Note:** The folder name must be `FunnelInsights` (case-sensitive).
 
-**Step 2: Install dependencies (if any)**
-
-```bash
-cd Funnels
-composer install --no-dev
-```
-
-**Step 3: Activate the plugin via CLI**
+**Step 2: Activate the plugin via CLI**
 
 ```bash
 cd /path/to/your/matomo
-./console plugin:activate Funnels
+./console plugin:activate FunnelInsights
 ```
 
-**Step 4: Verify installation**
+**Step 3: Verify installation**
 
 1. Log in to your Matomo dashboard
 2. Go to **Administration** (gear icon) → **System** → **Plugins**
-3. Confirm "Funnels" appears in the list and is activated
+3. Confirm "FunnelInsights" appears in the list and is activated
 
 The plugin will automatically create the required database table (`matomo_log_funnel`) during activation.
 
@@ -130,7 +123,7 @@ The plugin will automatically create the required database table (`matomo_log_fu
 
 1. Log in to your Matomo dashboard as a Super User
 2. Go to **Administration** → **Platform** → **Marketplace**
-3. Search for "Funnels"
+3. Search for "FunnelInsights"
 4. Click **Install**
 5. Click **Activate**
 
@@ -238,7 +231,7 @@ Access funnel data programmatically:
 # Get all funnels for a site
 curl "https://your-matomo.com/index.php?\
 module=API&\
-method=Funnels.getFunnels&\
+method=FunnelInsights.getFunnels&\
 idSite=1&\
 format=JSON&\
 token_auth=YOUR_TOKEN"
@@ -248,13 +241,19 @@ token_auth=YOUR_TOKEN"
 
 | Method | Description |
 |--------|-------------|
-| `Funnels.getFunnels` | List all funnels |
-| `Funnels.getFunnel` | Get single funnel details |
-| `Funnels.getFunnelReport` | Get funnel report data |
-| `Funnels.createFunnel` | Create a new funnel |
-| `Funnels.updateFunnel` | Update existing funnel |
-| `Funnels.deleteFunnel` | Delete a funnel |
-| `Funnels.duplicateFunnel` | Duplicate a funnel |
+| `FunnelInsights.getFunnels` | List all funnels |
+| `FunnelInsights.getFunnel` | Get single funnel details |
+| `FunnelInsights.getFunnelReport` | Get funnel report data |
+| `FunnelInsights.getFunnelEvolution` | Get funnel conversion trends over time |
+| `FunnelInsights.getOverview` | Get overview metrics for all funnels |
+| `FunnelInsights.getStepEvolution` | Get evolution data for a specific step |
+| `FunnelInsights.getSparklineData` | Get sparkline chart data |
+| `FunnelInsights.getVisitorLog` | Get visitor log for a funnel |
+| `FunnelInsights.getSuggestedValues` | Get suggested values for step configuration |
+| `FunnelInsights.createFunnel` | Create a new funnel |
+| `FunnelInsights.updateFunnel` | Update existing funnel |
+| `FunnelInsights.deleteFunnel` | Delete a funnel |
+| `FunnelInsights.duplicateFunnel` | Duplicate a funnel |
 
 ---
 
@@ -299,7 +298,7 @@ Open http://localhost:8080 in your browser and complete the Matomo setup wizard.
 **Step 5: Activate the plugin**
 
 ```bash
-docker-compose exec matomo ./console plugin:activate Funnels
+docker-compose exec matomo ./console plugin:activate FunnelInsights
 ```
 
 ### Running Tests
