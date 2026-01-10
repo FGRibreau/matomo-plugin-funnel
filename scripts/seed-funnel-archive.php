@@ -5,10 +5,17 @@
  *   php /var/www/html/plugins/FunnelInsights/scripts/seed-funnel-archive.php
  */
 
-// Bootstrap Matomo
+// Bootstrap Matomo using Environment
 define('PIWIK_INCLUDE_PATH', '/var/www/html');
-define('PIWIK_USER_PATH', PIWIK_INCLUDE_PATH);
-require_once PIWIK_INCLUDE_PATH . '/core/bootstrap.php';
+define('PIWIK_USER_PATH', '/var/www/html');
+define('PIWIK_DOCUMENT_ROOT', '/var/www/html');
+
+require_once PIWIK_INCLUDE_PATH . '/vendor/autoload.php';
+
+$environment = new \Piwik\Application\Environment('cli');
+$environment->init();
+
+\Piwik\Access::getInstance()->setSuperUserAccess(true);
 
 use Piwik\Db;
 use Piwik\Common;
@@ -20,79 +27,91 @@ echo "Seeding funnel archive data...\n";
 
 $idSite = 1;
 $idFunnel = 1;
-$yesterday = date('Y-m-d', strtotime('-1 day'));
+// Use fixed date that matches take-screenshots.js
+$targetDate = '2026-01-09';
 
 // Create realistic funnel step data (E-commerce checkout)
+// Starting with ~10,000 visits, realistic drop-off at each step
+// Step 1: Homepage - 10,247 entries
+// Step 2: Product Page - 7,534 (26.5% drop-off)
+// Step 3: Add to Cart - 4,218 (44% drop-off)
+// Step 4: Checkout - 2,847 (32.5% drop-off)
+// Step 5: Order Complete - 1,923 (32.4% drop-off) = 18.8% overall conversion
 $funnelSteps = [
     [
-        'visits' => 1247,
-        'entries' => 1247,
-        'exits' => 189,
-        'proceeded' => 1058,
+        'visits' => 10247,
+        'entries' => 10247,
+        'exits' => 2713,
+        'proceeded' => 7534,
         'skips' => 0,
-        'time_spent' => 45230,
-        'time_hits' => 1058,
+        'time_spent' => 452300,
+        'time_hits' => 7534,
         'dropoff_urls' => json_encode([
-            '/about' => 45,
-            '/contact' => 32,
-            '/blog' => 28,
-            '/faq' => 24,
-            '/search' => 20
+            '/about' => 542,
+            '/contact' => 421,
+            '/blog' => 387,
+            '/faq' => 312,
+            '/search' => 289,
+            '/careers' => 198,
+            '/terms' => 156
         ])
     ],
     [
-        'visits' => 1058,
+        'visits' => 7534,
         'entries' => 0,
-        'exits' => 247,
-        'proceeded' => 811,
+        'exits' => 3316,
+        'proceeded' => 4218,
         'skips' => 0,
-        'time_spent' => 89420,
-        'time_hits' => 811,
+        'time_spent' => 894200,
+        'time_hits' => 4218,
         'dropoff_urls' => json_encode([
-            '/' => 62,
-            '/products' => 48,
-            '/category' => 37,
-            '/search' => 30,
-            '/compare' => 25
+            '/' => 812,
+            '/products' => 623,
+            '/category' => 489,
+            '/search' => 412,
+            '/compare' => 347,
+            '/wishlist' => 298
         ])
     ],
     [
-        'visits' => 811,
+        'visits' => 4218,
         'entries' => 0,
-        'exits' => 156,
-        'proceeded' => 655,
+        'exits' => 1371,
+        'proceeded' => 2847,
         'skips' => 0,
-        'time_spent' => 67890,
-        'time_hits' => 655,
+        'time_spent' => 678900,
+        'time_hits' => 2847,
         'dropoff_urls' => json_encode([
-            '/product/other' => 42,
-            '/wishlist' => 35,
-            '/compare' => 28,
-            '/' => 22,
-            '/products' => 19
+            '/product/other' => 312,
+            '/wishlist' => 287,
+            '/compare' => 234,
+            '/' => 198,
+            '/products' => 167,
+            '/shipping-info' => 123
         ])
     ],
     [
-        'visits' => 655,
+        'visits' => 2847,
         'entries' => 0,
-        'exits' => 187,
-        'proceeded' => 468,
+        'exits' => 924,
+        'proceeded' => 1923,
         'skips' => 0,
-        'time_spent' => 123450,
-        'time_hits' => 468,
+        'time_spent' => 1234500,
+        'time_hits' => 1923,
         'dropoff_urls' => json_encode([
-            '/cart' => 52,
-            '/shipping-info' => 41,
-            '/payment-methods' => 33,
-            '/' => 26,
-            '/contact' => 20
+            '/cart' => 245,
+            '/shipping-info' => 198,
+            '/payment-methods' => 167,
+            '/' => 134,
+            '/contact' => 98,
+            '/faq' => 82
         ])
     ],
     [
-        'visits' => 468,
+        'visits' => 1923,
         'entries' => 0,
         'exits' => 0,
-        'proceeded' => 468,
+        'proceeded' => 1923,
         'skips' => 0,
         'time_spent' => 0,
         'time_hits' => 0,
@@ -108,42 +127,42 @@ foreach ($funnelSteps as $stepData) {
     $dataTable->addRow($row);
 }
 
-// Serialize
+// Serialize - Matomo stores blobs gzcompressed
 $serialized = $dataTable->getSerialized();
-$blobData = reset($serialized);
+$blobData = gzcompress(reset($serialized));
 
 // Get archive ID
-$archiveTableNumeric = Common::prefixTable('archive_numeric_' . date('Y_m', strtotime($yesterday)));
-$archiveTableBlob = Common::prefixTable('archive_blob_' . date('Y_m', strtotime($yesterday)));
+$yearMonth = date('Y_m', strtotime($targetDate));
+$archiveTableNumeric = Common::prefixTable('archive_numeric_' . $yearMonth);
+$archiveTableBlob = Common::prefixTable('archive_blob_' . $yearMonth);
 
-// Create tables if needed
-$yearMonth = date('Y_m', strtotime($yesterday));
-Db::exec("CREATE TABLE IF NOT EXISTS " . Common::prefixTable("archive_blob_$yearMonth") . " LIKE " . Common::prefixTable("archive_blob_2026_01"));
-Db::exec("CREATE TABLE IF NOT EXISTS " . Common::prefixTable("archive_numeric_$yearMonth") . " LIKE " . Common::prefixTable("archive_numeric_2026_01"));
+// Tables should already exist for 2026_01
 
-// Find or create archive ID
-$idArchive = Db::fetchOne("SELECT MAX(idarchive) FROM $archiveTableNumeric WHERE idsite = ? AND date1 = ?", [$idSite, $yesterday]);
+// Find the archive ID that has the 'done' flag for this date
+$idArchive = Db::fetchOne("SELECT idarchive FROM $archiveTableNumeric WHERE idsite = ? AND date1 = ? AND name = 'done' ORDER BY idarchive DESC LIMIT 1", [$idSite, $targetDate]);
 if (!$idArchive) {
-    $idArchive = 1;
+    // No existing archive, create new one
+    $idArchive = Db::fetchOne("SELECT COALESCE(MAX(idarchive), 0) + 1 FROM $archiveTableNumeric");
     // Insert done flag
-    Db::exec("INSERT INTO $archiveTableNumeric (idarchive, name, idsite, date1, date2, period, ts_archived, value)
+    Db::get()->query("INSERT INTO $archiveTableNumeric (idarchive, name, idsite, date1, date2, period, ts_archived, value)
               VALUES (?, 'done', ?, ?, ?, 1, NOW(), 1)
               ON DUPLICATE KEY UPDATE value = 1",
-              [$idArchive, $idSite, $yesterday, $yesterday]);
+              [$idArchive, $idSite, $targetDate, $targetDate]);
 }
+echo "Using archive ID: $idArchive\n";
 
 // Insert blob data
 $recordName = 'FunnelInsights_Funnel_' . $idFunnel;
-Db::exec("INSERT INTO $archiveTableBlob (idarchive, name, idsite, date1, date2, period, ts_archived, value)
+Db::get()->query("INSERT INTO $archiveTableBlob (idarchive, name, idsite, date1, date2, period, ts_archived, value)
           VALUES (?, ?, ?, ?, ?, 1, NOW(), ?)
           ON DUPLICATE KEY UPDATE value = VALUES(value), ts_archived = NOW()",
-          [$idArchive, $recordName, $idSite, $yesterday, $yesterday, $blobData]);
+          [$idArchive, $recordName, $idSite, $targetDate, $targetDate, $blobData]);
 
 echo "SUCCESS: Inserted funnel archive data\n";
 echo "  Archive ID: $idArchive\n";
-echo "  Date: $yesterday\n";
+echo "  Date: $targetDate\n";
 echo "  Record: $recordName\n";
 echo "  Steps: " . count($funnelSteps) . "\n";
-echo "  Total Entries: 1247\n";
-echo "  Conversions: 468\n";
-echo "  Conversion Rate: 37.5%\n";
+echo "  Total Entries: 10,247\n";
+echo "  Conversions: 1,923\n";
+echo "  Conversion Rate: 18.8%\n";

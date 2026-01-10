@@ -12,7 +12,39 @@ if (!fs.existsSync(SCREENSHOTS_DIR)) {
   fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 }
 
+async function hideDevWarnings(page) {
+  // Hide development mode warning and other notification banners
+  await page.evaluate(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      /* Hide development mode warning */
+      .alert-warning, .notification-warning, .development-notice,
+      [class*="development"], [class*="warning-banner"],
+      .system-notification, .matomo-notification,
+      .alert.alert-warning, .notification.system,
+      #development_notice, #developmentNotice,
+      .notification-group, .ui-notification {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Also remove elements directly if they exist
+    const selectors = [
+      '.alert-warning', '.notification-warning', '.development-notice',
+      '.system-notification', '.notification-group', '.ui-notification'
+    ];
+    selectors.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => el.remove());
+    });
+  });
+}
+
 async function verifyScreenshot(page, filename, expectedContent, forbiddenContent = ['error occurred', 'sign in to continue', 'forgot your password']) {
+  // Hide dev warnings before screenshot
+  await hideDevWarnings(page);
+  await page.waitForTimeout(200);
+
   const filepath = path.join(SCREENSHOTS_DIR, filename);
   await page.screenshot({ path: filepath, fullPage: false });
 
