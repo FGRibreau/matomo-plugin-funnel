@@ -13,6 +13,7 @@ Understand where visitors drop off in your checkout process, signup flow, or any
 ## Table of Contents
 
 - [Features](#features)
+- [Screenshots](#screenshots)
 - [Requirements](#requirements)
 - [Installation](#installation)
   - [Option 1: Manual Installation](#option-1-manual-installation)
@@ -47,6 +48,30 @@ Understand where visitors drop off in your checkout process, signup flow, or any
 - **Custom Alerts** - Get notified when conversion rates change
 - **Privacy-First** - 100% data ownership, GDPR compliant, no external data sharing
 - **Performance Optimized** - Reports generated during offline archiving
+
+---
+
+## Screenshots
+
+### Funnel Overview
+View all your funnels at a glance with key metrics and sparkline trends.
+
+![Funnel Overview](docs/screenshots/01-funnel-overview.png)
+
+### Manage Funnels
+Create, edit, duplicate, and delete funnels from the management interface.
+
+![Manage Funnels](docs/screenshots/02-manage-funnels.png)
+
+### Create/Edit Funnel
+Define funnel steps with flexible matching options - URL, path, page title, events, or search queries.
+
+![Create Funnel](docs/screenshots/03-create-funnel.png)
+
+### Dashboard Widget
+Add the funnel overview widget to any Matomo dashboard for quick access to conversion metrics.
+
+![Dashboard Widget](docs/screenshots/07-widget-overview.png)
 
 ---
 
