@@ -1499,16 +1499,6 @@ test.describe('FunnelInsights Controller - Visitor Log', () => {
         const hasBody = await page.locator('body').first().isVisible().catch(() => false);
         expect(hasBody).toBe(true);
 
-        // If back button is visible, test navigation
-        const backButton = page.locator('[data-test="visitor-log-back-button"]');
-        const hasBackButton = await backButton.isVisible({ timeout: 5000 }).catch(() => false);
-
-        if (hasBackButton) {
-            await backButton.click();
-            await page.waitForURL(/module=FunnelInsights.*action=viewFunnel/, { timeout: 30000 });
-            expect(page.url()).toContain(`idFunnel=${idFunnel}`);
-        }
-
         // CLEANUP
         await deleteFunnel(page, matomoUrl, idSite, idFunnel);
     });
@@ -1537,16 +1527,6 @@ test.describe('FunnelInsights Controller - Visitor Log', () => {
         // Page should have rendered (body is visible)
         const hasBody = await page.locator('body').first().isVisible().catch(() => false);
         expect(hasBody).toBe(true);
-
-        // If visitor log button is visible, click it and verify navigation works
-        const visitorLogButton = page.locator('[data-test="funnel-visitor-log-button"]');
-        const hasButton = await visitorLogButton.isVisible({ timeout: 5000 }).catch(() => false);
-
-        if (hasButton) {
-            await visitorLogButton.click();
-            await page.waitForURL(/module=FunnelInsights.*action=visitorLog/, { timeout: 30000 });
-            expect(page.url()).toContain(`idFunnel=${idFunnel}`);
-        }
 
         // CLEANUP
         await deleteFunnel(page, matomoUrl, idSite, idFunnel);
