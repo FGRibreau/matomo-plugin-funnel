@@ -174,15 +174,20 @@ class Archiver extends AbstractArchiver
             $funnelId = $funnel['idfunnel'];
             $finalStats = isset($aggregatedStats[$funnelId]) ? $aggregatedStats[$funnelId] : array();
 
-            // Serialize dropoff_urls array to JSON to avoid "Multidimensional column values not supported" error
+            // Prepare rows with 'label' column for proper aggregation
+            // Matomo requires a 'label' column to merge rows in addDataTable()
             foreach ($finalStats as $stepIdx => $stepData) {
+                // Add label column (step index as string)
+                $finalStats[$stepIdx]['label'] = (string)$stepIdx;
+
+                // Serialize dropoff_urls array to JSON
                 if (isset($stepData['dropoff_urls']) && is_array($stepData['dropoff_urls'])) {
                     $finalStats[$stepIdx]['dropoff_urls'] = json_encode($stepData['dropoff_urls']);
                 }
             }
 
             $dataTable = new DataTable();
-            $dataTable->addRowsFromSimpleArray($finalStats);
+            $dataTable->addRowsFromSimpleArray(array_values($finalStats));
 
             $this->getProcessor()->insertBlobRecord('FunnelInsights_Funnel_' . $funnelId, $dataTable->getSerialized());
         }
