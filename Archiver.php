@@ -245,34 +245,16 @@ class Archiver extends AbstractArchiver
             // Iterate actions to find Entry
             for ($k = 0; $k < count($actions); $k++) {
                 $action = $actions[$k];
-                
-                // Try to find entry
+
+                // Try to find entry - MUST start at Step 0 for funnel coherence
+                // This ensures visits[N+1] <= visits[N] always holds
                 if ($currentStepIndex === -1) {
-                    $matchedEntryStep = -1;
-                    
-                    for ($i = 0; $i < count($steps); $i++) {
-                        $step = $steps[$i];
-                        if ($matcher->match($step, $action)) {
-                            $matchedEntryStep = $i;
-                            break;
-                        }
-                        if (isset($step['required']) && $step['required']) {
-                            break;
-                        }
-                    }
-                    
-                    if ($matchedEntryStep > -1) {
-                        $currentStepIndex = $matchedEntryStep;
+                    // Only match Step 0 for entry
+                    if (count($steps) > 0 && $matcher->match($steps[0], $action)) {
+                        $currentStepIndex = 0;
                         $currentStepActionIndex = $k;
-                        $stats[$currentStepIndex]['visits']++;
-                        $stats[$currentStepIndex]['entries']++;
-                        
-                        for ($j = 0; $j < $matchedEntryStep; $j++) {
-                            $stats[$j]['skips']++;
-                        }
-                        
-                        // Continue to process flow from this action
-                        // We don't break the outer loop, we continue to look for next steps
+                        $stats[0]['visits']++;
+                        $stats[0]['entries']++;
                     }
                 } else {
                     // Already in funnel at $currentStepIndex.
