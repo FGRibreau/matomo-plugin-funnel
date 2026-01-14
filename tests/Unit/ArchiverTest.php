@@ -73,11 +73,16 @@ class ArchiverTest extends TestCase
         $stats = $method->invokeArgs($archiver, [$funnel, $visits, $matcher]);
 
         // Assertions
+        // Visit 1: Step1 → Step2 → Step3 (complete)
+        // Visit 2: Step1 → /other (drop at step1)
+        // Visit 3: Step1 → /step3 (drop at step1, step3 doesn't match step2)
+        // Visit 4: Step2 → Step3 (entry at step2, proceed to step3)
+        // Visit 5: Step1 → Step2 → /step1 → /step2 → Step3 (complete, loopback ignored)
         $this->assertEquals(4, $stats[0]['visits'], 'Step 1 Visits');
         $this->assertEquals(4, $stats[0]['entries'], 'Step 1 Entries');
-        $this->assertEquals(3, $stats[0]['proceeded'], 'Step 1 Proceeded');
+        $this->assertEquals(2, $stats[0]['proceeded'], 'Step 1 Proceeded (V1 and V5)');
         $this->assertEquals(3, $stats[1]['visits'], 'Step 2 Visits');
-        $this->assertEquals(4, $stats[2]['visits'], 'Step 3 Visits');
+        $this->assertEquals(3, $stats[2]['visits'], 'Step 3 Visits (V1, V4, V5)');
     }
 
     public function testRequiredSteps()
@@ -124,10 +129,13 @@ class ArchiverTest extends TestCase
         $stats = $method->invokeArgs($archiver, [$funnel, $visits, $matcher]);
 
         // Assertions
+        // Visit 1: Step1 → Step2 → Step3 (complete)
+        // Visit 2: Step1 → /step3 (drop at step1, can't skip step2 during progression)
+        // Visit 3: /step2 → /step3 (can't enter, step1 is required)
         $this->assertEquals(2, $stats[0]['visits'], 'Step 1 Visits');
         $this->assertEquals(1, $stats[1]['visits'], 'Step 2 Visits');
-        $this->assertEquals(1, $stats[1]['skips'], 'Step 2 Skips');
-        $this->assertEquals(2, $stats[2]['visits'], 'Step 3 Visits');
+        $this->assertEquals(0, $stats[1]['skips'], 'Step 2 Skips (skipping only applies to entry, not progression)');
+        $this->assertEquals(1, $stats[2]['visits'], 'Step 3 Visits (only V1 completes)');
     }
 
     public function testEntryWithOptionalSteps()

@@ -266,17 +266,16 @@ class Archiver extends AbstractArchiver
                     // Already in funnel at $currentStepIndex.
                     // Check if we moved to a NEXT step or broke the flow.
                     
-                    // 1. Check if this action matches a SUBSEQUENT step
+                    // 1. Check if this action matches the NEXT step (immediate only)
+                    // A visit can only progress to the immediate next step to ensure
+                    // visits[N+1] <= visits[N] (proper funnel dependency)
                     $matchFoundIndex = -1;
-                    
-                    for ($i = $currentStepIndex + 1; $i < count($steps); $i++) {
-                        $nextStep = $steps[$i];
+
+                    $nextStepIndex = $currentStepIndex + 1;
+                    if ($nextStepIndex < count($steps)) {
+                        $nextStep = $steps[$nextStepIndex];
                         if ($matcher->match($nextStep, $action)) {
-                            $matchFoundIndex = $i;
-                            break;
-                        }
-                        if (isset($nextStep['required']) && $nextStep['required']) {
-                            break; 
+                            $matchFoundIndex = $nextStepIndex;
                         }
                     }
                     

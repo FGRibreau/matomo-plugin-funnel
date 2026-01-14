@@ -50,6 +50,7 @@ coverage/
 composer.lock
 
 # Claude Code local files
+CLAUDE.md
 CLAUDE.local.md
 .claude/
 spec.md
