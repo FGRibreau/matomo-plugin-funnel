@@ -190,9 +190,16 @@ class Archiver extends AbstractArchiver
 
     public function aggregateMultipleReports()
     {
-         $this->getProcessor()->aggregateDataTableRecords(
-            'FunnelInsights_Funnel_*'
-        );
+        $idSite = $this->getProcessor()->getParams()->getSite()->getId();
+        $dao = new FunnelConfig();
+        $funnels = $dao->getAllForSite($idSite);
+
+        foreach ($funnels as $funnel) {
+            if (!$funnel['active']) continue;
+
+            $recordName = 'FunnelInsights_Funnel_' . $funnel['idfunnel'];
+            $this->getProcessor()->aggregateDataTableRecords($recordName);
+        }
     }
     
     private function calculateFunnelMetrics($funnel, $visits, $matcher, $conversions = array())
