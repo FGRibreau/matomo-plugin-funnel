@@ -19,6 +19,68 @@ Understand where visitors drop off in your checkout process, signup flow, or any
 
 ---
 
+## Sponsors
+
+<table>
+  <tr>
+    <td align="center" width="175">
+      <a href="https://france-nuage.fr/?mtm_source=github&mtm_medium=sponsor&mtm_campaign=france-nuage&mtm_content=matomo-plugin-funnel">
+        <img src="assets/sponsors/france-nuage.svg" height="60" alt="France-Nuage"/><br/>
+        <b>France-Nuage</b>
+      </a><br/>
+      <sub>Host Matomo on sovereign French cloud. Re-internalise your analytics.</sub>
+    </td>
+    <td align="center" width="175">
+      <a href="https://www.hook0.com/?mtm_source=github&mtm_medium=sponsor&mtm_campaign=hook0&mtm_content=matomo-plugin-funnel">
+        <img src="assets/sponsors/hook0.png" height="60" alt="Hook0"/><br/>
+        <b>Hook0</b>
+      </a><br/>
+      <sub>Push funnel events as signed webhooks to any system. Self-hostable.</sub>
+    </td>
+    <td align="center" width="175">
+      <a href="https://getnatalia.com/?mtm_source=github&mtm_medium=sponsor&mtm_campaign=natalia&mtm_content=matomo-plugin-funnel">
+        <img src="assets/sponsors/natalia.svg" height="60" alt="Natalia"/><br/>
+        <b>Natalia</b>
+      </a><br/>
+      <sub>Funnel drop-offs called back 24/7 by AI voice agent. Recover lost leads.</sub>
+    </td>
+    <td align="center" width="175">
+      <a href="https://netir.fr/?mtm_source=github&mtm_medium=sponsor&mtm_campaign=netir&mtm_content=matomo-plugin-funnel">
+        <img src="assets/sponsors/netir.svg" height="60" alt="Netir"/><br/>
+        <b>Netir</b>
+      </a><br/>
+      <sub>Hire vetted French freelance analysts via mentored marketplace.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="233">
+      <a href="https://nobullshitconseil.com/?mtm_source=github&mtm_medium=sponsor&mtm_campaign=nbc&mtm_content=matomo-plugin-funnel">
+        <img src="assets/sponsors/nobullshitconseil.svg" height="60" alt="NoBullshitConseil"/><br/>
+        <b>NoBullshitConseil</b>
+      </a><br/>
+      <sub>Tech advisory without the bullshit. Growth &amp; analytics strategy.</sub>
+    </td>
+    <td align="center" width="233">
+      <a href="https://qualneo.fr/?mtm_source=github&mtm_medium=sponsor&mtm_campaign=qualneo&mtm_content=matomo-plugin-funnel">
+        <img src="assets/sponsors/qualneo.svg" height="60" alt="Qualneo"/><br/>
+        <b>Qualneo</b>
+      </a><br/>
+      <sub>Qualiopi LMS tracking learner funnels. 32 indicators wired for trainers.</sub>
+    </td>
+    <td align="center" width="233">
+      <a href="https://recapro.ai/?mtm_source=github&mtm_medium=sponsor&mtm_campaign=recapro&mtm_content=matomo-plugin-funnel">
+        <img src="assets/sponsors/recapro.png" height="60" alt="Recapro"/><br/>
+        <b>Recapro</b>
+      </a><br/>
+      <sub>Sovereign AI that turns sales call transcripts into funnel insights.</sub>
+    </td>
+  </tr>
+</table>
+
+> **Interested in sponsoring?** [Get in touch](mailto:rust@fgribreau.com)
+
+---
+
 ## Table of Contents
 
 - [Features](#features)
@@ -401,68 +463,6 @@ Contributions are welcome! Here's how to get started:
 - Write tests for new features
 - Update documentation as needed
 - Keep commits focused and atomic
-
----
-
-## Sponsors
-
-<table>
-  <tr>
-    <td align="center" width="175">
-      <a href="https://france-nuage.fr/?mtm_source=github&mtm_medium=sponsor&mtm_campaign=france-nuage&mtm_content=matomo-plugin-funnel">
-        <img src="assets/sponsors/france-nuage.svg" height="60" alt="France-Nuage"/><br/>
-        <b>France-Nuage</b>
-      </a><br/>
-      <sub>Host Matomo on sovereign French cloud. Re-internalise your analytics.</sub>
-    </td>
-    <td align="center" width="175">
-      <a href="https://www.hook0.com/?mtm_source=github&mtm_medium=sponsor&mtm_campaign=hook0&mtm_content=matomo-plugin-funnel">
-        <img src="assets/sponsors/hook0.png" height="60" alt="Hook0"/><br/>
-        <b>Hook0</b>
-      </a><br/>
-      <sub>Push funnel events as signed webhooks to any system. Self-hostable.</sub>
-    </td>
-    <td align="center" width="175">
-      <a href="https://getnatalia.com/?mtm_source=github&mtm_medium=sponsor&mtm_campaign=natalia&mtm_content=matomo-plugin-funnel">
-        <img src="assets/sponsors/natalia.svg" height="60" alt="Natalia"/><br/>
-        <b>Natalia</b>
-      </a><br/>
-      <sub>Funnel drop-offs called back 24/7 by AI voice agent. Recover lost leads.</sub>
-    </td>
-    <td align="center" width="175">
-      <a href="https://netir.fr/?mtm_source=github&mtm_medium=sponsor&mtm_campaign=netir&mtm_content=matomo-plugin-funnel">
-        <img src="assets/sponsors/netir.svg" height="60" alt="NetIR"/><br/>
-        <b>NetIR</b>
-      </a><br/>
-      <sub>Hire vetted French freelance analysts via mentored marketplace.</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="233">
-      <a href="https://nobullshitconseil.com/?mtm_source=github&mtm_medium=sponsor&mtm_campaign=nbc&mtm_content=matomo-plugin-funnel">
-        <img src="assets/sponsors/nobullshitconseil.svg" height="60" alt="NoBullshitConseil"/><br/>
-        <b>NoBullshitConseil</b>
-      </a><br/>
-      <sub>Tech advisory without the bullshit. Growth &amp; analytics strategy.</sub>
-    </td>
-    <td align="center" width="233">
-      <a href="https://qualneo.fr/?mtm_source=github&mtm_medium=sponsor&mtm_campaign=qualneo&mtm_content=matomo-plugin-funnel">
-        <img src="assets/sponsors/qualneo.svg" height="60" alt="Qualneo"/><br/>
-        <b>Qualneo</b>
-      </a><br/>
-      <sub>Qualiopi LMS tracking learner funnels. 32 indicators wired for trainers.</sub>
-    </td>
-    <td align="center" width="233">
-      <a href="https://recapro.ai/?mtm_source=github&mtm_medium=sponsor&mtm_campaign=recapro&mtm_content=matomo-plugin-funnel">
-        <img src="assets/sponsors/recapro.png" height="60" alt="Recapro"/><br/>
-        <b>Recapro</b>
-      </a><br/>
-      <sub>Sovereign AI that turns sales call transcripts into funnel insights.</sub>
-    </td>
-  </tr>
-</table>
-
-> **Interested in sponsoring?** [Get in touch](mailto:rust@fgribreau.com)
 
 ---
 
